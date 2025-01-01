@@ -1,0 +1,8 @@
+{
+    "title": "Outside",
+    "description": "You're standing outside a tavern. It's raining.",
+    "exits": {
+        "camino": "inicio/camino",
+        "inside": "Tavern"
+    }
+}
