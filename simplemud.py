@@ -50,7 +50,7 @@ def move_player(id, exit_name):
         if ex in room["exits"]:
             for pid, pl in players.items():
                 if players[pid]["room"] == players[id]["room"] and pid != id:
-                    mud.send_message(pid, f"{players[id]['name']} left via exit '{ex}'")
+                    mud.send_message(pid, f"{players[id]['name']} se fué hacia '{ex}'")
             
             players[id]["room"] = room["exits"][ex]
             new_room = load_room(players[id]["room"])
@@ -115,8 +115,10 @@ while True:
     for id in mud.get_disconnected_players():
         if id not in players:
             continue
+        # Notificar a todos los jugadores que alguien ha salido
         for pid, pl in players.items():
-            mud.send_message(pid, f"{players[id]['name']} quit the game")
+            if pid != id:
+                mud.send_message(pid, f"{players[id]['name']} has left the game.")
         del players[id]
 
     for id, command, params in mud.get_commands():
@@ -146,6 +148,10 @@ while True:
                 mud.send_message(id, f"Welcome to the game, {players[id]['name']}. Type 'help' for a list of commands.")
                 room = load_room(players[id]["room"])
                 mud.send_message(id, room["description"])
+                # Notificar a todos los jugadores que alguien ha entrado
+                for pid, pl in players.items():
+                    if pid != id:
+                        mud.send_message(pid, f"{players[id]['name']} has joined the game.")
             except ValueError as e:
                 players[id]["password_attempts"] += 1
                 if players[id]["password_attempts"] >= 3:
@@ -157,10 +163,11 @@ while True:
 
         elif command == "help":
             mud.send_message(id, "Commands:")
-            mud.send_message(id, "  say <message>  - Says something out loud, e.g. 'say Hello'")
-            mud.send_message(id, "  look           - Examines the surroundings, e.g. 'look'")
-            mud.send_message(id, "  go <exit>      - Moves through the exit specified, e.g. 'go outside'")
-            mud.send_message(id, "  <exit>         - Shortcut to move through an exit, e.g. 'outside'")
+            mud.send_message(id, "  say <message>  - Decir algo en voz alta, e.g. 'say Hello'")
+            mud.send_message(id, "  look           - Examina tu alrededor, e.g. 'look'")
+            mud.send_message(id, "  go <exit>      - Mover hacia la salida especificada, e.g. 'go outside'")
+            mud.send_message(id, "  <exit>         - Atajo para moverse a la salida indicada, e.g. 'outside'")
+            mud.send_message(id, "  estado         - Comprobar el estado de tu personaje")
             mud.send_message(id, "  salir          - Abandonar el juego")
         elif command == "say":
             for pid, pl in players.items():
@@ -194,20 +201,35 @@ while True:
                                  f"Fuerza: {ficha['fuerza']}, Destreza: {ficha['destreza']}, "
                                  f"Magia: {ficha['magia']}, Carisma: {ficha['carisma']}, Suerte: {ficha['suerte']}")
         elif command == "matar":
-            # Debug: Show players in the same room
-            players_here = [pl["name"] for pid, pl in players.items() if players[pid]["room"] == players[id]["room"]]
-            mud.send_message(id, f"Debug: Players in the room: {', '.join(players_here)}")
-            mud.send_message(id, f"Debug: Target victim: {params.strip().lower()}")
+            # Generar un array con los jugadores en la sala (excluyendo al jugador actual)
+            players_here = [pl["name"].strip().lower() for pid, pl in players.items() 
+                            if players[pid]["room"] == players[id]["room"] and pid != id]
+            
+            # Debug: Mostrar jugadores en la sala
+            #mud.send_message(id, f"Debug: Players in the room (array): {players_here}")
+            #mud.send_message(id, f"Debug: Players structure: {players}")  # Mostrar toda la estructura de players
+            #mud.send_message(id, f"Debug: Target victim (raw): '{params}'")
+            #mud.send_message(id, f"Debug: Target victim (processed): '{params.strip().lower()}'")
+            #mud.send_message(id, f"Debug: Target victim length: {len(params.strip())}")
 
-            # Find the victim by name and ensure they are in the same room
-            victima_id = next((pid for pid, pl in players.items() 
-                               if pl["name"].strip().lower() == params.strip().lower() 
-                               and pid != id 
-                               and pl["room"] == players[id]["room"]), None)
-            if not victima_id:
-                mud.send_message(id, f"No se encontró al jugador '{params}' en la misma sala.")
-            else:
+            # Asignar target_name y mostrar su valor
+            target_name = params.strip().lower()
+            #mud.send_message(id, f"Debug: Final target_name: '{target_name}'")
+
+            # Debug: Evaluar las condiciones de pertenencia
+            #mud.send_message(id, f"Debug: target_name in players_here: {target_name in players_here}")
+            #mud.send_message(id, f"Debug: target_name not in players_here: {target_name not in players_here}")
+
+            # Verificar si el objetivo está en la lista de jugadores en la sala
+            if target_name in players_here:
+                # Encontrar el ID del jugador objetivo
+                victima_id = next(pid for pid, pl in players.items() 
+                                  if pl["name"].strip().lower() == target_name 
+                                  and players[pid]["room"] == players[id]["room"])
                 iniciar_combate(players, id, players[victima_id]["name"], mud)
+            else:
+                mud.send_message(id, f"No se encontró al jugador '{params.strip()}'.")
+
         else:
             # Comprobar si el comando es una salida válida en la sala actual
             try:
