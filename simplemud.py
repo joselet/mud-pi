@@ -194,9 +194,16 @@ while True:
                                  f"Fuerza: {ficha['fuerza']}, Destreza: {ficha['destreza']}, "
                                  f"Magia: {ficha['magia']}, Carisma: {ficha['carisma']}, Suerte: {ficha['suerte']}")
         elif command == "matar":
+            # Debug: Show players in the same room
+            players_here = [pl["name"] for pid, pl in players.items() if players[pid]["room"] == players[id]["room"]]
+            mud.send_message(id, f"Debug: Players in the room: {', '.join(players_here)}")
+            mud.send_message(id, f"Debug: Target victim: {params.strip().lower()}")
+
             # Find the victim by name and ensure they are in the same room
             victima_id = next((pid for pid, pl in players.items() 
-                               if pl["name"].lower() == params.lower() and pl["room"] == players[id]["room"]), None)
+                               if pl["name"].strip().lower() == params.strip().lower() 
+                               and pid != id 
+                               and pl["room"] == players[id]["room"]), None)
             if not victima_id:
                 mud.send_message(id, f"No se encontró al jugador '{params}' en la misma sala.")
             else:
