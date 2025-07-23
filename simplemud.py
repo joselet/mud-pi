@@ -56,20 +56,20 @@ def move_player(id, exit_name):
             new_room = load_room(players[id]["room"])
             for pid, pl in players.items():
                 if players[pid]["room"] == players[id]["room"] and pid != id:
-                    mud.send_message(pid, f"{players[id]['name']} arrived via exit '{ex}'")
+                    mud.send_message(pid, f"{players[id]['name']} llega desde '{ex}'")
             
-            mud.send_message(id, f"You arrive at '{players[id]['room']}'")
+            mud.send_message(id, f"Estás en '{players[id]['room']}'")
             mud.send_message(id, new_room["title"])
             mud.send_message(id, new_room["description"])
             # Mostrar jugadores presentes en la nueva sala (excluyendo al jugador actual)
             players_here = [pl["name"] for pid, pl in players.items() if players[pid]["room"] == players[id]["room"] and pid != id]
             if players_here:
-                mud.send_message(id, f"Players here: {', '.join(players_here)}")
+                mud.send_message(id, f"Puedes ver a {', '.join(players_here)}")
             else:
-                mud.send_message(id, "You are alone here.")
-            mud.send_message(id, f"Exits are: {', '.join(new_room['exits'])}")
+                mud.send_message(id, "Estás solo aquí.")
+            mud.send_message(id, f"Puedes ir a: {', '.join(new_room['exits'])}")
         else:
-            mud.send_message(id, f"Unknown exit '{ex}'")
+            mud.send_message(id, f"Salida desconocida '{ex}'")
     except ValueError as e:
         mud.send_message(id, f"Error loading room: {e}")
 
