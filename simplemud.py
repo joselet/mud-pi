@@ -40,6 +40,36 @@ def load_room(room_name):
     rooms_cache[room_name] = room_data
     return room_data
 
+def move_player(id, exit_name):
+    try:
+        room = load_room(players[id]["room"])
+        ex = exit_name.lower()
+        if ex in room["exits"]:
+            for pid, pl in players.items():
+                if players[pid]["room"] == players[id]["room"] and pid != id:
+                    mud.send_message(pid, f"{players[id]['name']} left via exit '{ex}'")
+            
+            players[id]["room"] = room["exits"][ex]
+            new_room = load_room(players[id]["room"])
+            for pid, pl in players.items():
+                if players[pid]["room"] == players[id]["room"] and pid != id:
+                    mud.send_message(pid, f"{players[id]['name']} arrived via exit '{ex}'")
+            
+            mud.send_message(id, f"You arrive at '{players[id]['room']}'")
+            mud.send_message(id, new_room["title"])
+            mud.send_message(id, new_room["description"])
+            # Mostrar jugadores presentes en la nueva sala (excluyendo al jugador actual)
+            players_here = [pl["name"] for pid, pl in players.items() if players[pid]["room"] == players[id]["room"] and pid != id]
+            if players_here:
+                mud.send_message(id, f"Players here: {', '.join(players_here)}")
+            else:
+                mud.send_message(id, "You are alone here.")
+            mud.send_message(id, f"Exits are: {', '.join(new_room['exits'])}")
+        else:
+            mud.send_message(id, f"Unknown exit '{ex}'")
+    except ValueError as e:
+        mud.send_message(id, f"Error loading room: {e}")
+
 # Stores the players in the game
 players = {}
 
@@ -82,6 +112,7 @@ while True:
             mud.send_message(id, "  look           - Examines the surroundings, e.g. 'look'")
             mud.send_message(id, "  go <exit>      - Moves through the exit specified, e.g. 'go outside'")
             mud.send_message(id, "  <exit>         - Shortcut to move through an exit, e.g. 'outside'")
+            mud.send_message(id, "  salir          - Abandonar el juego")
         elif command == "say":
             for pid, pl in players.items():
                 if players[pid]["room"] == players[id]["room"]:
@@ -91,62 +122,30 @@ while True:
             try:
                 room = load_room(players[id]["room"])
                 mud.send_message(id, room["description"])
-                players_here = [pl["name"] for pid, pl in players.items() if players[pid]["room"] == players[id]["room"]]
-                mud.send_message(id, f"Players here: {', '.join(players_here)}")
+                # Mostrar jugadores presentes en la nueva sala (excluyendo al jugador actual)
+                players_here = [pl["name"] for pid, pl in players.items() if players[pid]["room"] == players[id]["room"] and pid != id]
+                if players_here:
+                    mud.send_message(id, f"Players here: {', '.join(players_here)}")
+                else:
+                    mud.send_message(id, "You are alone here.")
                 mud.send_message(id, f"Exits are: {', '.join(room['exits'])}")
             except ValueError as e:
                 mud.send_message(id, f"Error loading room: {e}")
 
         elif command == "go":
-            try:
-                room = load_room(players[id]["room"])
-                ex = params.lower()
-                if ex in room["exits"]:
-                    for pid, pl in players.items():
-                        if players[pid]["room"] == players[id]["room"] and pid != id:
-                            mud.send_message(pid, f"{players[id]['name']} left via exit '{ex}'")
-                    
-                    players[id]["room"] = room["exits"][ex]
-                    new_room = load_room(players[id]["room"])
-                    for pid, pl in players.items():
-                        if players[pid]["room"] == players[id]["room"] and pid != id:
-                            mud.send_message(pid, f"{players[id]['name']} arrived via exit '{ex}'")
-                    
-                    mud.send_message(id, f"You arrive at '{players[id]['room']}'")
-                    mud.send_message(id, new_room["title"])
-                    mud.send_message(id, new_room["description"])
-                else:
-                    mud.send_message(id, f"Unknown exit '{ex}'")
-            except ValueError as e:
-                mud.send_message(id, f"Error loading room: {e}")
-
-        # **** mejorar esta funcion... conviene llamar a la funcion go, pero se debería cargar la room antes del if
-        #elif command in room["exits"]:
-        #    params = command
-        #    command = "go"
-        elif command in (load_room(players[id]["room"])["exits"]):
-            params = command
-            try:
-                room = load_room(players[id]["room"])
-                ex = params.lower()
-                if ex in room["exits"]:
-                    for pid, pl in players.items():
-                        if players[pid]["room"] == players[id]["room"] and pid != id:
-                            mud.send_message(pid, f"{players[id]['name']} left via exit '{ex}'")
-                    
-                    players[id]["room"] = room["exits"][ex]
-                    new_room = load_room(players[id]["room"])
-                    for pid, pl in players.items():
-                        if players[pid]["room"] == players[id]["room"] and pid != id:
-                            mud.send_message(pid, f"{players[id]['name']} arrived via exit '{ex}'")
-                    
-                    mud.send_message(id, f"You arrive at '{players[id]['room']}'")
-                    mud.send_message(id, new_room["title"])
-                    mud.send_message(id, new_room["description"])
-                else:
-                    mud.send_message(id, f"Unknown exit '{ex}'")
-            except ValueError as e:
-                mud.send_message(id, f"Error loading room: {e}")
-
+            move_player(id, params)
+        elif command == "salir":
+            mud.send_message(id, "Disconnecting. Goodbye!")
+            mud._handle_disconnect(id)
+            if id in players:
+                del players[id]
         else:
-            mud.send_message(id, f"Unknown command '{command}'")
+            # Comprobar si el comando es una salida válida en la sala actual
+            try:
+                room = load_room(players[id]["room"])
+                if command in room["exits"]:
+                    move_player(id, command)
+                else:
+                    mud.send_message(id, f"Unknown command '{command}'")
+            except ValueError as e:
+                mud.send_message(id, f"Error loading room: {e}")
