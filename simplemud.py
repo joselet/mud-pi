@@ -4,9 +4,12 @@ import time
 import os
 import json  # Puedes usar `yaml` si prefieres archivos YAML
 from mudserver import MudServer
+from sistema_de_combate import iniciar_combate, procesar_turno_combate
 
 # Carpeta donde están almacenadas las salas
 ROOMS_DIR = "rooms"
+# Carpeta donde se almacenan las fichas de los jugadores
+PLAYERS_DIR = "players"
 
 # Cache para las salas cargadas
 rooms_cache = {}
@@ -70,6 +73,29 @@ def move_player(id, exit_name):
     except ValueError as e:
         mud.send_message(id, f"Error loading room: {e}")
 
+def cargar_o_crear_ficha(nombre, password):
+    player_file = os.path.join(PLAYERS_DIR, f"{nombre.lower()}.json")
+    if os.path.isfile(player_file):
+        with open(player_file, "r") as file:
+            ficha = json.load(file)
+        if ficha["password"] != password:
+            raise ValueError("Contraseña incorrecta.")
+    else:
+        ficha = {
+            "name": nombre,
+            "password": password,
+            "vida": 100,
+            "energia": 100,
+            "fuerza": 10,
+            "destreza": 10,
+            "magia": 5,
+            "carisma": 5,
+            "suerte": 5
+        }
+        with open(player_file, "w") as file:
+            json.dump(ficha, file)
+    return ficha
+
 # Stores the players in the game
 players = {}
 
@@ -82,8 +108,9 @@ while True:
     mud.update()
 
     for id in mud.get_new_players():
-        players[id] = {"name": None, "room": None}
-        mud.send_message(id, "What is your name?")
+        # Initialize the player with proper flags
+        players[id] = {"name": None, "room": None, "awaiting_name": True}
+        mud.send_message(id, "What is your name?")  # Ask for the name once
 
     for id in mud.get_disconnected_players():
         if id not in players:
@@ -96,15 +123,37 @@ while True:
         if id not in players:
             continue
 
-        if players[id]["name"] is None:
-            players[id]["name"] = command
-            players[id]["room"] = "Tavern"
-            mud.send_message(id, f"Welcome to the game, {players[id]['name']}. Type 'help' for a list of commands. Have fun!")
+        if players[id]["awaiting_name"]:
+            # Handle name input
+            player_name = command.strip()
+            players[id]["name"] = player_name
+            players[id]["awaiting_name"] = False
+            players[id]["awaiting_password"] = True
+            players[id]["password_attempts"] = 0  # Initialize password attempts
+            player_file = os.path.join(PLAYERS_DIR, f"{player_name.lower()}.json")
+            if os.path.isfile(player_file):
+                mud.send_message(id, "Player found. Please enter your password:")
+            else:
+                mud.send_message(id, "Player not found. A new account will be created. Please set your password:")
+
+        elif players[id].get("awaiting_password"):
+            # Step 2: Handle password input with retry mechanism
             try:
+                password = command.strip()
+                players[id]["ficha"] = cargar_o_crear_ficha(players[id]["name"], password)
+                players[id]["room"] = "Tavern"
+                players[id]["awaiting_password"] = False
+                mud.send_message(id, f"Welcome to the game, {players[id]['name']}. Type 'help' for a list of commands.")
                 room = load_room(players[id]["room"])
                 mud.send_message(id, room["description"])
             except ValueError as e:
-                mud.send_message(id, f"Error loading room: {e}")
+                players[id]["password_attempts"] += 1
+                if players[id]["password_attempts"] >= 3:
+                    mud.send_message(id, "Too many failed attempts. Disconnecting.")
+                    mud._handle_disconnect(id)
+                    del players[id]
+                else:
+                    mud.send_message(id, f"Error: {e}. Please try again ({3 - players[id]['password_attempts']} attempts left).")
 
         elif command == "help":
             mud.send_message(id, "Commands:")
@@ -139,6 +188,19 @@ while True:
             mud._handle_disconnect(id)
             if id in players:
                 del players[id]
+        elif command == "estado":
+            ficha = players[id]["ficha"]
+            mud.send_message(id, f"Estado actual: Vida: {ficha['vida']}, Energía: {ficha['energia']}, "
+                                 f"Fuerza: {ficha['fuerza']}, Destreza: {ficha['destreza']}, "
+                                 f"Magia: {ficha['magia']}, Carisma: {ficha['carisma']}, Suerte: {ficha['suerte']}")
+        elif command == "matar":
+            # Find the victim by name and ensure they are in the same room
+            victima_id = next((pid for pid, pl in players.items() 
+                               if pl["name"].lower() == params.lower() and pl["room"] == players[id]["room"]), None)
+            if not victima_id:
+                mud.send_message(id, f"No se encontró al jugador '{params}' en la misma sala.")
+            else:
+                iniciar_combate(players, id, players[victima_id]["name"], mud)
         else:
             # Comprobar si el comando es una salida válida en la sala actual
             try:
@@ -149,3 +211,5 @@ while True:
                     mud.send_message(id, f"Unknown command '{command}'")
             except ValueError as e:
                 mud.send_message(id, f"Error loading room: {e}")
+        # Procesar turnos de combate
+        procesar_turno_combate(players, mud)
