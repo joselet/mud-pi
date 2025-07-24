@@ -202,10 +202,11 @@ while True:
         elif command == "ayuda":
             mud.send_message(id, "Commands:")
             mud.send_message(id, "  decir <message>  - Decir algo en voz alta, e.g. 'decir Hola a todos'")
-            mud.send_message(id, "  mirar           - Examina tu alrededor, e.g. 'mirar'")
+            mud.send_message(id, "  mirar          - Examina tu alrededor, e.g. 'mirar'")
             mud.send_message(id, "  ir <exit>      - Mover hacia la salida especificada, e.g. 'ir outside'")
             mud.send_message(id, "  <exit>         - Atajo para moverse a la salida indicada, e.g. 'outside'")
             mud.send_message(id, "  estado         - Comprobar el estado de tu personaje")
+            mud.send_message(id, "  matar <objetivo> - Atacar a otro personaje")
             mud.send_message(id, "  salir          - Abandonar el juego")
         elif command == "decir":
             for pid, pl in players.items():

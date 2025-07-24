@@ -52,8 +52,9 @@ def procesar_turno_combate(players, mud,mostrar_sala_al_jugador):
 
         # Verificar si la víctima ha muerto
         if victima["vida"] <= 0:
-            mud.send_message(atacante_id, f"¡Has derrotado a {players[victima_id]['name']}!")
-            mud.send_message(victima_id, "¡Has sido derrotado!")
+            mud.send_message(atacante_id, f"\033[93m¡Has derrotado a {players[victima_id]['name']}!\033[0m")
+            mud.send_message(victima_id, "\033[31m¡Has sido derrotado!\033[0m")
+            mud.send_message(victima_id, "\033[93mDebido a tu pobre genética, las celulas de tu cuerpo se deshacen lentamente debido a la falta de irrigación mantenida por tu bomba de fluido sanguíneo.\nPor imperativa del ordenador, los restos de tu triste cuerpo son trasladados a la planta de regeneración para ser reciclados y finalmene formar una nueva vida.\nTu alma y tu psique es transferida a un nuevo cuerpo.\033[0m")
             del combates_activos[atacante_id]
             del combates_activos[victima_id]
             # enviar a la víctima a la sala de incubadora
