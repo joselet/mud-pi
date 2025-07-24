@@ -1,0 +1,8 @@
+{
+    "title": "Farmacia",
+    "description": "Un laboratorio lleno de estanterías con frascos etiquetados con nombres incomprensibles. El aire huele a químicos fuertes y algo metálico.",
+    "exits": {
+        "norte": "lab/pasillo_genetico",
+        "este": "lab/almacen_quimico"
+    }
+}

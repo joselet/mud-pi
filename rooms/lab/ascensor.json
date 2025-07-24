@@ -1,9 +1,9 @@
 {
     "title": "Ascensor",
-    "description": "Un ascensor amplio, parece que permite la entrada y salida de varias camillas para transportarlas a otros lugares.\nUna botonera en la pared permite seleccionar el destino.",
+    "description": "Un ascensor metálico con botones desgastados. Un cartel advierte: 'Uso exclusivo del personal autorizado'.",
     "exits": {
-        "fuera": "lab/pasillo_genetico",
-        "p1": "lab/piso1",
-        "p2": "lab/piso2"
+        "pasillo": "lab/pasillo_genetico",
+        "planta1": "lab/planta1",
+        "planta2": "lab/planta2"
     }
 }

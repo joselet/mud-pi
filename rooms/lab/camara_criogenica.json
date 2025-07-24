@@ -1,0 +1,7 @@
+{
+    "title": "Cámara Criogénica",
+    "description": "Un cuarto helado con cápsulas criogénicas alineadas contra las paredes. Cada cápsula contiene un cuerpo congelado en perfecto estado.",
+    "exits": {
+        "oeste": "lab/planta2"
+    }
+}
