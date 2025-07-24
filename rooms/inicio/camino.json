@@ -1,7 +1,0 @@
-{
-    "title": "Camino",
-    "description": "Estas en el camino hacia el poblado.",
-    "exits": {
-        "volver": "Outside"
-    }
-}

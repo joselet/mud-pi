@@ -57,7 +57,7 @@ def procesar_turno_combate(players, mud,mostrar_sala_al_jugador):
             del combates_activos[atacante_id]
             del combates_activos[victima_id]
             # enviar a la víctima a la sala de incubadora
-            players[victima_id]["room"] = "incubadora"
+            players[victima_id]["room"] = "respawn"
             mostrar_sala_al_jugador(victima_id)
             # restablecer un porcentaje de la vida de la víctima
             victima["vida"] = 25

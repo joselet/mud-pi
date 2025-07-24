@@ -48,17 +48,23 @@ def move_player(id, exit_name):
         room = load_room(players[id]["room"])
         ex = exit_name.lower()
         if ex in room["exits"]:
+            current_room = players[id]["room"]  # Store the current room before moving
             # Notificar salida al resto de jugadores en la sala actual
             for pid, pl in players.items():
-                if players[pid]["room"] == players[id]["room"] and pid != id:
-                    mud.send_message(pid, f"{players[id]['name']} se fué hacia '{ex}'")
+                if players[pid]["room"] == current_room and pid != id:
+                    mud.send_message(pid, f"{players[id]['name']} se fue hacia '{ex}'")
             
             # Mover al jugador
             players[id]["room"] = room["exits"][ex]
+            new_room = players[id]["room"]  # Store the new room after moving
+            
+            # Determinar la salida que lleva al current_room desde la nueva sala
+            reverse_exit = next((exit_name for exit_name, target_room in load_room(new_room)["exits"].items() if target_room == current_room), "algún lugar desconocido")
+            
             # Notificar llegada al resto de jugadores en la nueva sala
             for pid, pl in players.items():
-                if players[pid]["room"] == players[id]["room"] and pid != id:
-                    mud.send_message(pid, f"{players[id]['name']} llega desde '{ex}'")
+                if players[pid]["room"] == new_room and pid != id:
+                    mud.send_message(pid, f"{players[id]['name']} llega desde '{reverse_exit}'")
             
             # Mostrar la sala al jugador usando la función ya existente
             mostrar_sala_al_jugador(id)
@@ -67,7 +73,7 @@ def move_player(id, exit_name):
     except ValueError as e:
         print(f"[ERR] Error loading room (pid= {id}): {e}")  # Debug por salida estándar
         mud.send_message(id, "\033[31mHas sufrido un fallo espacio/tiempo y apareces en la incubadora.\033[0m")
-        players[id]["room"] = "incubadora"
+        players[id]["room"] = "respawn"
         mostrar_sala_al_jugador(id)
 
 def cargar_o_crear_ficha(nombre, password):
@@ -88,7 +94,7 @@ def cargar_o_crear_ficha(nombre, password):
             "magia": 5,
             "carisma": 5,
             "suerte": 5,
-            "room": "Tavern"  # Nueva clave para la sala inicial
+            "room": "inicio"  # Nueva clave para la sala inicial
         }
         with open(player_file, "w") as file:
             json.dump(ficha, file)
@@ -110,7 +116,7 @@ def mostrar_sala_al_jugador(id):
     except ValueError as e:
         print(f"[ERR] Error loading room (pid= {id}): {e}")  # Debug por salida estándar
         mud.send_message(id, "\033[31mHas sufrido un fallo espacio/tiempo y apareces en la incubadora.\033[0m")
-        players[id]["room"] = "incubadora"
+        players[id]["room"] = "respawn"
         mostrar_sala_al_jugador(id)
 
 
@@ -168,8 +174,8 @@ while True:
             try:
                 password = command.strip()
                 players[id]["ficha"] = cargar_o_crear_ficha(players[id]["name"], password)
-                # Usar la última sala guardada si existe, si no, "Tavern"
-                ficha_room = players[id]["ficha"].get("room", "Tavern")
+                # Usar la última sala guardada si existe, si no, "inicio"
+                ficha_room = players[id]["ficha"].get("room", "inicio")
                 players[id]["room"] = ficha_room
                 players[id]["awaiting_password"] = False
                 mud.send_message(id, f"Bienvenido al juego, {players[id]['name']}. Escribe 'ayuda' para obtener una lista de comandos.")
@@ -231,9 +237,10 @@ while True:
                 del players[id]
         elif command == "estado":
             ficha = players[id]["ficha"]
-            mud.send_message(id, f"Estado actual: Vida: {ficha['vida']}, Energía: {ficha['energia']}, "
-                                 f"Fuerza: {ficha['fuerza']}, Destreza: {ficha['destreza']}, "
-                                 f"Magia: {ficha['magia']}, Carisma: {ficha['carisma']}, Suerte: {ficha['suerte']}")
+            mud.send_message(id, f"Estado actual: "
+                                 f"\nVida: {ficha['vida']},       Energía: {ficha['energia']}, "
+                                 f"\nFuerza: {ficha['fuerza']},   Destreza: {ficha['destreza']}, "
+                                 f"\nMagia: {ficha['magia']}, Carisma: {ficha['carisma']}, Suerte: {ficha['suerte']}")
         elif command == "matar":
             # Generar un array con los jugadores en la sala (excluyendo al jugador actual)
             players_here = [pl["name"].strip().lower() for pid, pl in players.items() 
@@ -275,7 +282,7 @@ while True:
             except ValueError as e:
                 print(f"[ERR] Error loading room (pid= {id}): {e}")  # Debug por salida estándar
                 mud.send_message(id, "\033[31mHas sufrido un fallo espacio/tiempo y apareces en la incubadora.\033[0m")
-                players[id]["room"] = "incubadora"
+                players[id]["room"] = "respawn"
                 mostrar_sala_al_jugador(id)
     # Procesar turnos de combate
     procesar_turno_combate(players, mud, mostrar_sala_al_jugador)
