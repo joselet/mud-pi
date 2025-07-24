@@ -58,13 +58,13 @@ def procesar_turno_combate(players, mud,mostrar_sala_al_jugador):
             del combates_activos[victima_id]
             # enviar a la víctima a la sala de incubadora
             players[victima_id]["room"] = "incubadora"
-            mostrar_sala_al_jugador(victima_id, mud)
-            # restablecer la vida de la víctima
-            victima["vida"] = 100
+            mostrar_sala_al_jugador(victima_id)
+            # restablecer un porcentaje de la vida de la víctima
+            victima["vida"] = 25
             # Notificar a todos los jugadores que alguien ha muerto
             for pid, pl in players.items():
                 if pid != victima_id:
-                    mud.send_message(pid, f"[info] {players[id]['name']} Ha muerto.")
+                    mud.send_message(pid, f"[info] {players[victima_id]['name']} Ha muerto.")
             # Terminar el combate
             continue
         else:
