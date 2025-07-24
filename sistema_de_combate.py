@@ -29,7 +29,7 @@ def iniciar_combate(players, atacante_id, victima_nombre, mud):
     mud.send_message(atacante_id, f"Has iniciado un combate contra {players[victima_id]['name']}.")
     mud.send_message(victima_id, f"{players[atacante_id]['name']} te ha atacado. ¡Prepárate para luchar!")
 
-def procesar_turno_combate(players, mud):
+def procesar_turno_combate(players, mud,mostrar_sala_al_jugador):
     for atacante_id, combate in list(combates_activos.items()):
         if combate["turno"] != atacante_id:
             continue
@@ -37,11 +37,16 @@ def procesar_turno_combate(players, mud):
         victima_id = combate["victima"]
         atacante = players[atacante_id]["ficha"]
         victima = players[victima_id]["ficha"]
-
+        # Verificar si el atacante tiene suficiente energía
+        if atacante["energia"] <= 0:
+            mud.send_message(atacante_id, "No tienes suficiente energía para atacar.")
+            continue
         # Calcular daño
-        dano = max(0, atacante["fuerza"] + random.randint(-5, 5) - victima["destreza"])
+        dano = max(0, atacante["fuerza"] + random.randint(0, 5) - victima["destreza"])
         victima["vida"] -= dano
-
+        # Restar energía al atacante
+        atacante["energia"] -= 1
+        # Notificar a los jugadores
         mud.send_message(atacante_id, f"Has infligido {dano} de daño a {players[victima_id]['name']}.")
         mud.send_message(victima_id, f"Has recibido {dano} de daño de {players[atacante_id]['name']}.")
 
@@ -51,5 +56,16 @@ def procesar_turno_combate(players, mud):
             mud.send_message(victima_id, "¡Has sido derrotado!")
             del combates_activos[atacante_id]
             del combates_activos[victima_id]
+            # enviar a la víctima a la sala de incubadora
+            players[victima_id]["room"] = "incubadora"
+            mostrar_sala_al_jugador(victima_id, mud)
+            # restablecer la vida de la víctima
+            victima["vida"] = 100
+            # Notificar a todos los jugadores que alguien ha muerto
+            for pid, pl in players.items():
+                if pid != victima_id:
+                    mud.send_message(pid, f"[info] {players[id]['name']} Ha muerto.")
+            # Terminar el combate
+            continue
         else:
             combate["turno"] = victima_id
