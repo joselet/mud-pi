@@ -126,6 +126,22 @@ players = {}
 # Start the server
 mud = MudServer()
 
+# Diccionario de alias para las salidas típicas
+EXIT_ALIASES = {
+    "n": "norte",
+    "s": "sur",
+    "e": "este",
+    "o": "oeste",
+    "ne": "noreste",
+    "no": "noroeste",
+    "se": "sudeste",
+    "so": "sudoeste",
+    "ar": "arriba",
+    "ab": "abajo",
+    "de": "dentro",
+    "fu": "fuera"
+}
+
 # Main game loop
 while True:
     time.sleep(0.2)
@@ -155,6 +171,10 @@ while True:
     for id, command, params in mud.get_commands():
         if id not in players:
             continue
+
+        # Verificar si el comando es un alias de salida
+        if command in EXIT_ALIASES:
+            command = EXIT_ALIASES[command]  # Traducir alias al nombre completo
 
         if players[id]["awaiting_name"]:
             # Handle name input
