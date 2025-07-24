@@ -313,7 +313,14 @@ class MudServer(object):
             # if there is a problem reading from the socket (e.g. the client
             # has disconnected) a socket error will be raised
             except socket.error:
+                # Manejar el error y desconectar el cliente
+                print(f"[LOG] socket.error, desconectando {id}.")
                 self._handle_disconnect(id)
+            except UnicodeDecodeError:
+                # Manejar el error de decodificación y desconectar el cliente
+                print(f"[LOG] UnicodeDecodeError en cliente {id}, desconectando.")
+                self._handle_disconnect(id)
+                continue
 
     def _handle_disconnect(self, clid):
 

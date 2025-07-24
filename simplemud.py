@@ -96,6 +96,20 @@ def cargar_o_crear_ficha(nombre, password):
             json.dump(ficha, file)
     return ficha
 
+def mostrar_sala_al_jugador(id):
+    try:
+        room = load_room(players[id]["room"])
+        mud.send_message(id, room["description"])
+        # Mostrar jugadores presentes en la nueva sala (excluyendo al jugador actual)
+        players_here = [pl["name"] for pid, pl in players.items() if players[pid]["room"] == players[id]["room"] and pid != id]
+        if players_here:
+            mud.send_message(id, f"Aquí ves a: {', '.join(players_here)}")
+        else:
+            mud.send_message(id, "Estás solo aquí.")
+        mud.send_message(id, f"Salidas: {', '.join(room['exits'])}")
+    except ValueError as e:
+        mud.send_message(id, f"Error loading room: {e}")
+
 # Stores the players in the game
 players = {}
 
@@ -110,7 +124,7 @@ while True:
     for id in mud.get_new_players():
         # Initialize the player with proper flags
         players[id] = {"name": None, "room": None, "awaiting_name": True}
-        mud.send_message(id, "What is your name?")  # Ask for the name once
+        mud.send_message(id, "Qué nombre tiene tu personaje?")  # Ask for the name once
 
     for id in mud.get_disconnected_players():
         if id not in players:
@@ -118,7 +132,7 @@ while True:
         # Notificar a todos los jugadores que alguien ha salido
         for pid, pl in players.items():
             if pid != id:
-                mud.send_message(pid, f"{players[id]['name']} has left the game.")
+                mud.send_message(pid, f"{players[id]['name']} salió del juego.")
         del players[id]
 
     for id, command, params in mud.get_commands():
@@ -134,9 +148,9 @@ while True:
             players[id]["password_attempts"] = 0  # Initialize password attempts
             player_file = os.path.join(PLAYERS_DIR, f"{player_name.lower()}.json")
             if os.path.isfile(player_file):
-                mud.send_message(id, "Player found. Please enter your password:")
+                mud.send_message(id, "Personaje encontrado. Dame la contraseña:")
             else:
-                mud.send_message(id, "Player not found. A new account will be created. Please set your password:")
+                mud.send_message(id, "Personaje no encontrado. Vamos a crearlo. Por favor, establece una contraseña:")
 
         elif players[id].get("awaiting_password"):
             # Step 2: Handle password input with retry mechanism
@@ -145,13 +159,14 @@ while True:
                 players[id]["ficha"] = cargar_o_crear_ficha(players[id]["name"], password)
                 players[id]["room"] = "Tavern"
                 players[id]["awaiting_password"] = False
-                mud.send_message(id, f"Welcome to the game, {players[id]['name']}. Type 'help' for a list of commands.")
-                room = load_room(players[id]["room"])
-                mud.send_message(id, room["description"])
+                mud.send_message(id, f"Bienvenido al juego, {players[id]['name']}. Escribe 'ayuda' para obtener una lista de comandos.")
+                mostrar_sala_al_jugador(id)
                 # Notificar a todos los jugadores que alguien ha entrado
                 for pid, pl in players.items():
                     if pid != id:
-                        mud.send_message(pid, f"{players[id]['name']} has joined the game.")
+                        mud.send_message(pid, f"[info] {players[id]['name']} entró al juego.")
+                # Mostrar por salida estándar para el log del servidor
+                print(f"[LOG] {players[id]['name']} entró al juego (id={id})")
             except ValueError as e:
                 players[id]["password_attempts"] += 1
                 if players[id]["password_attempts"] >= 3:
@@ -161,37 +176,32 @@ while True:
                 else:
                     mud.send_message(id, f"Error: {e}. Please try again ({3 - players[id]['password_attempts']} attempts left).")
 
-        elif command == "help":
+        elif command == "ayuda":
             mud.send_message(id, "Commands:")
-            mud.send_message(id, "  say <message>  - Decir algo en voz alta, e.g. 'say Hello'")
-            mud.send_message(id, "  look           - Examina tu alrededor, e.g. 'look'")
-            mud.send_message(id, "  go <exit>      - Mover hacia la salida especificada, e.g. 'go outside'")
+            mud.send_message(id, "  decir <message>  - Decir algo en voz alta, e.g. 'decir Hola a todos'")
+            mud.send_message(id, "  mirar           - Examina tu alrededor, e.g. 'mirar'")
+            mud.send_message(id, "  ir <exit>      - Mover hacia la salida especificada, e.g. 'ir outside'")
             mud.send_message(id, "  <exit>         - Atajo para moverse a la salida indicada, e.g. 'outside'")
             mud.send_message(id, "  estado         - Comprobar el estado de tu personaje")
             mud.send_message(id, "  salir          - Abandonar el juego")
-        elif command == "say":
+        elif command == "decir":
             for pid, pl in players.items():
                 if players[pid]["room"] == players[id]["room"]:
-                    mud.send_message(pid, f"{players[id]['name']} says: {params}")
+                    mud.send_message(pid, f"{players[id]['name']} dice: {params}")
 
-        elif command == "look":
-            try:
-                room = load_room(players[id]["room"])
-                mud.send_message(id, room["description"])
-                # Mostrar jugadores presentes en la nueva sala (excluyendo al jugador actual)
-                players_here = [pl["name"] for pid, pl in players.items() if players[pid]["room"] == players[id]["room"] and pid != id]
-                if players_here:
-                    mud.send_message(id, f"Players here: {', '.join(players_here)}")
-                else:
-                    mud.send_message(id, "You are alone here.")
-                mud.send_message(id, f"Exits are: {', '.join(room['exits'])}")
-            except ValueError as e:
-                mud.send_message(id, f"Error loading room: {e}")
+        elif command == "mirar":
+            mostrar_sala_al_jugador(id)
 
-        elif command == "go":
+        elif command == "ir":
             move_player(id, params)
         elif command == "salir":
-            mud.send_message(id, "Disconnecting. Goodbye!")
+            mud.send_message(id, "Desconectando. Adiós!")
+            # Notificar al resto de jugadores que alguien ha salido
+            for pid, pl in players.items():
+                if pid != id:
+                    mud.send_message(pid, f"[info] {players[id]['name']} se marchó del juego.")
+            # Mostrar por salida estándar para el log del servidor
+            print(f"[LOG] {players[id]['name']} salió del juego (id={id})")
             mud._handle_disconnect(id)
             if id in players:
                 del players[id]
@@ -237,7 +247,7 @@ while True:
                 if command in room["exits"]:
                     move_player(id, command)
                 else:
-                    mud.send_message(id, f"Unknown command '{command}'")
+                    mud.send_message(id, f"No conozco la orden '{command}' (escribe: ayuda para ver los comandos disponibles)")
             except ValueError as e:
                 mud.send_message(id, f"Error loading room: {e}")
         # Procesar turnos de combate
