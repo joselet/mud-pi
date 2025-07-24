@@ -58,7 +58,7 @@ def move_player(id, exit_name):
                 if players[pid]["room"] == players[id]["room"] and pid != id:
                     mud.send_message(pid, f"{players[id]['name']} llega desde '{ex}'")
             
-            mud.send_message(id, f"Estás en '{players[id]['room']}'")
+            #mud.send_message(id, f"[Debug]Estás en '{players[id]['room']}'")
             mud.send_message(id, new_room["title"])
             mud.send_message(id, new_room["description"])
             # Mostrar jugadores presentes en la nueva sala (excluyendo al jugador actual)
@@ -90,7 +90,8 @@ def cargar_o_crear_ficha(nombre, password):
             "destreza": 10,
             "magia": 5,
             "carisma": 5,
-            "suerte": 5
+            "suerte": 5,
+            "room": "Tavern"  # Nueva clave para la sala inicial
         }
         with open(player_file, "w") as file:
             json.dump(ficha, file)
@@ -99,6 +100,7 @@ def cargar_o_crear_ficha(nombre, password):
 def mostrar_sala_al_jugador(id):
     try:
         room = load_room(players[id]["room"])
+        mud.send_message(id, room["title"])
         mud.send_message(id, room["description"])
         # Mostrar jugadores presentes en la nueva sala (excluyendo al jugador actual)
         players_here = [pl["name"] for pid, pl in players.items() if players[pid]["room"] == players[id]["room"] and pid != id]
@@ -129,6 +131,13 @@ while True:
     for id in mud.get_disconnected_players():
         if id not in players:
             continue
+        # Guardar la sala actual en la ficha antes de eliminar al jugador
+        ficha = players[id].get("ficha")
+        if ficha:
+            ficha["room"] = players[id]["room"]
+            player_file = os.path.join(PLAYERS_DIR, f"{ficha['name'].lower()}.json")
+            with open(player_file, "w") as file:
+                json.dump(ficha, file)
         # Notificar a todos los jugadores que alguien ha salido
         for pid, pl in players.items():
             if pid != id:
@@ -157,7 +166,9 @@ while True:
             try:
                 password = command.strip()
                 players[id]["ficha"] = cargar_o_crear_ficha(players[id]["name"], password)
-                players[id]["room"] = "Tavern"
+                # Usar la última sala guardada si existe, si no, "Tavern"
+                ficha_room = players[id]["ficha"].get("room", "Tavern")
+                players[id]["room"] = ficha_room
                 players[id]["awaiting_password"] = False
                 mud.send_message(id, f"Bienvenido al juego, {players[id]['name']}. Escribe 'ayuda' para obtener una lista de comandos.")
                 mostrar_sala_al_jugador(id)
@@ -165,6 +176,10 @@ while True:
                 for pid, pl in players.items():
                     if pid != id:
                         mud.send_message(pid, f"[info] {players[id]['name']} entró al juego.")
+                # Notificar a los jugadores de la sala actual que alguien acaba de aparecer
+                for pid, pl in players.items():
+                    if players[pid]["room"] == players[id]["room"] and pid != id:
+                        mud.send_message(pid, f"{players[id]['name']} acaba de aparecer en la sala por arte de magia.")
                 # Mostrar por salida estándar para el log del servidor
                 print(f"[LOG] {players[id]['name']} entró al juego (id={id})")
             except ValueError as e:
@@ -196,6 +211,13 @@ while True:
             move_player(id, params)
         elif command == "salir":
             mud.send_message(id, "Desconectando. Adiós!")
+            # Guardar la sala actual en la ficha antes de eliminar al jugador
+            ficha = players[id].get("ficha")
+            if ficha:
+                ficha["room"] = players[id]["room"]
+                player_file = os.path.join(PLAYERS_DIR, f"{ficha['name'].lower()}.json")
+                with open(player_file, "w") as file:
+                    json.dump(ficha, file)
             # Notificar al resto de jugadores que alguien ha salido
             for pid, pl in players.items():
                 if pid != id:
@@ -250,5 +272,5 @@ while True:
                     mud.send_message(id, f"No conozco la orden '{command}' (escribe: ayuda para ver los comandos disponibles)")
             except ValueError as e:
                 mud.send_message(id, f"Error loading room: {e}")
-        # Procesar turnos de combate
-        procesar_turno_combate(players, mud)
+    # Procesar turnos de combate
+    procesar_turno_combate(players, mud)

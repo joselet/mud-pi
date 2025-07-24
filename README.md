@@ -1,9 +1,18 @@
-MUD Pi
-======
+Paranoia MUD Pi
+===============
 
-A simple text-based Multi-User Dungeon (MUD) game, which could be run on a 
-Raspberry Pi or other low-end server.
+Un intento de representación del juego de rol "Paranoia" llevado a un sencillo motor de mud basado en python.
 
+Este proyecto proviene de un fork de mud-pi, del autor: [Frimkron/mud-pi](https://github.com/Frimkron/mud-pi)
+
+
+Acerca de Paranoia
+------------------
+Paranoia es un juego de rol cómico, ambientado en un futuro distópico. Diseñado por Daniel Seth Gelber, Greg Costikyan, Eric Goldberg y Ken Rolston Paranoia fue publicado por primera vez en Estados Unidos por la editorial West End Games en 1984.[1]​ Presenta influencias de obras ambientadas en la distopía, como por ejemplo 1984 (de George Orwell), Un mundo feliz (de Aldous Huxley), Brazil, (de Terry Gilliam), o La naranja mecánica (de Anthony Burgess).
+
+En 1991 Paranoia fue traducido y publicado en lengua española por la hoy en día desaparecida editorial barcelonesa Joc Internacional.
+
+Fuente: [wikipedia](https://es.wikipedia.org/wiki/Paranoia_(juego_de_rol))
 
 Requirements
 ------------

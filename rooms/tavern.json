@@ -1,7 +1,12 @@
 {
     "title": "Tavern",
+    "title": "Laboratorio genético",
     "description": "You're in a cozy tavern warmed by an open fire.",
+    "description": "Un frío laboratorio genético, lleno de tubos de ensayo y equipos científicos.",
     "exits": {
         "outside": "Outside"
+    },
+    "exits": {
+        "fuera": "lab/pasillo_genetico"
     }
 }

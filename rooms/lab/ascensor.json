@@ -1,0 +1,9 @@
+{
+    "title": "Ascensor",
+    "description": "Un ascensor amplio, parece que permite la entrada y salida de varias camillas para transportarlas a otros lugares.\nUna botonera en la pared permite seleccionar el destino.",
+    "exits": {
+        "fuera": "lab/pasillo_genetico",
+        "p1": "lab/piso1",
+        "p2": "lab/piso2"
+    }
+}

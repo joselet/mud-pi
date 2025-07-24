@@ -1,0 +1,8 @@
+{
+    "title": "Pasillo",
+    "description": "Un pasillo oscuro y frío. A lo largo del pasillo múltiples camillas están alineadas, cada una con un cuerpo inerte cubierto por una sábana.\nAl fondo ves un ascensor.",
+    "exits": {
+        "puerta": "tavern",
+        "ascensor": "lab/ascensor"
+    }
+}
