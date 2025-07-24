@@ -239,7 +239,7 @@ while True:
             ficha = players[id]["ficha"]
             mud.send_message(id, f"Estado actual: "
                                  f"\nVida: {ficha['vida']},       Energía: {ficha['energia']}, "
-                                 f"\nFuerza: {ficha['fuerza']},   Destreza: {ficha['destreza']}, "
+                                 f"\nFuerza: {ficha['fuerza']},      Destreza: {ficha['destreza']}, "
                                  f"\nMagia: {ficha['magia']}, Carisma: {ficha['carisma']}, Suerte: {ficha['suerte']}")
         elif command == "matar":
             # Generar un array con los jugadores en la sala (excluyendo al jugador actual)
