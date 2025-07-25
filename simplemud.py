@@ -37,7 +37,7 @@ def load_room(room_name):
     # Verificar que la sala tiene los campos obligatorios
     required_keys = {"title", "description", "exits"}
     if not required_keys.issubset(room_data.keys()):
-        raise ValueError(f"Room file '{room_path}' is missing required keys: {required_keys - room_data.keys()}")
+        raise ValueError(f"Room file '{room_file}' is missing required keys: {required_keys - room_data.keys()}")
     
     # Almacenar en la caché y devolver
     rooms_cache[room_name] = room_data

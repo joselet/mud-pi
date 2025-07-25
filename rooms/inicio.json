@@ -2,6 +2,6 @@
     "title": "Laboratorio genético",
     "description": "Un frío laboratorio genético, lleno de tubos de ensayo y equipos científicos.",
     "exits": {
-        "fuera": "lab/pasillo_genetico"
+        "fuera": "lab/p3_pasillo_genetico"
     }
 }
