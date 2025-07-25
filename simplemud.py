@@ -326,7 +326,7 @@ while True:
             mud.send_message(id, "  <exit>         - Atajo para moverse a la salida indicada, e.g. 'outside'")
             mud.send_message(id, "  ficha         - Comprobar la ficha y estado de tu personaje")
             mud.send_message(id, "  matar <objetivo> - Atacar a otro personaje")
-            mud.send_message(id, "  salir          - Abandonar el juego")
+            mud.send_message(id, "  abandonar          - Abandonar el juego")
 
         elif command == "decir":
             for pid, pl in players.items():
@@ -339,7 +339,7 @@ while True:
         elif command == "ir":
             move_player(id, params)
 
-        elif command == "salir":
+        elif command == "abandonar":
             mud.send_message(id, "Desconectando. Adiós!")
             # Guardar la sala actual en la base de datos antes de eliminar al jugador
             ficha = players[id]
@@ -357,7 +357,7 @@ while True:
         elif command == "ficha":
             ficha = players[id]
             mud.send_message(id, (
-                f"Eres {ficha['display_name']}, ciudadano de nivel {NIVEL_DISPLAY.get(ficha.get('nivel', 0))} y clonado {ficha.get('clon', 1)} veces:\n"
+                f"Eres {ficha['display_name']}, agente esclarecedor con Código de Seguridad: {NIVEL_DISPLAY.get(ficha.get('nivel', 0))} y clonado {ficha.get('clon', 1)} veces:\n"
                 f"Te han asignado al servicio: {ficha.get('servicio', 'Ninguno')}\n"
                 f"Perteneces a la sociedad secreta: {ficha.get('sociedad_secreta', 'Ninguna')}\n"
                 f"Vives en el sector: {ficha.get('sector', 'Desconocido')}\n"
