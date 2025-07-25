@@ -1,7 +1,0 @@
-{
-    "title": "Bañera incubadora",
-    "description": "Te encuentras rodeado de líquido. Puedes respirar gracias a un tubo insertado en tus fosas nasales. Abres los ojos y apenas puedes ver el exterior. el líquido pastoso que te recubre te proporciona un calor confortable. Te quedarías aquí de por vida.",
-    "exits": {
-        "fuera": "inicio"
-    }
-}

@@ -1,8 +1,0 @@
-{
-    "title": "Planta 2 - Sala de Experimentación",
-    "description": "Una sala amplia con mesas quirúrgicas y herramientas extrañas. Pantallas muestran datos biométricos de sujetos desconocidos.",
-    "exits": {
-        "ascensor": "lab/ascensor",
-        "este": "lab/camara_criogenica"
-    }
-}

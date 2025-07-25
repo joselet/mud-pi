@@ -1,8 +1,0 @@
-{
-    "title": "Planta 1 - Laboratorio de Clonación",
-    "description": "Un laboratorio con cápsulas de vidrio llenas de líquido verde. Dentro de cada cápsula flota un cuerpo humanoide en diferentes etapas de desarrollo.",
-    "exits": {
-        "ascensor": "lab/ascensor",
-        "oeste": "lab/sala_control"
-    }
-}

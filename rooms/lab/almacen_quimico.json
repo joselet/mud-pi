@@ -1,7 +1,0 @@
-{
-    "title": "Almacén Químico",
-    "description": "Un cuarto pequeño con estanterías repletas de botellas y recipientes etiquetados con símbolos de peligro. Un leve zumbido eléctrico llena el aire.",
-    "exits": {
-        "oeste": "lab/farmacia"
-    }
-}

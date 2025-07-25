@@ -1,9 +1,0 @@
-{
-    "title": "Ascensor",
-    "description": "Un ascensor amplio de paredes metálicas. Parece que permite la entrada y salida de varias camillas para transportarlas a otros lugares.\nUna botonera en la pared permite seleccionar el destino.\nLos botones están bastante desgastados. Puedes ver que uno de ellos, marcado con el símbolo P3 está rodeado por un recuadro iluminado.\nUn cartel advierte: 'Uso exclusivo del personal autorizado'.",
-    "exits": {
-        "p3": "lab/p3_pasillo_genetico",
-        "p2": "lab/planta2",
-        "p1": "lab/planta1"
-    }
-}
