@@ -241,6 +241,20 @@ EXIT_ALIASES = {
     "fu": "fuera"
 }
 
+def validar_contraseña(nombre, password):
+    """Valida la contraseña de un jugador existente."""
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+    cur.execute("SELECT password FROM players WHERE name = ?", (nombre.lower(),))
+    row = cur.fetchone()
+    conn.close()
+    if row and row["password"] == password:
+        return True
+    elif row:
+        raise ValueError("Contraseña incorrecta.")
+    return False
+
 # Main game loop
 while True:
     time.sleep(0.2)
@@ -294,6 +308,23 @@ while True:
             # Step 2: Handle password input with retry mechanism
             try:
                 password = command.strip()
+                # Validar la contraseña antes de proceder
+                if not validar_contraseña(players[id]["name"], password):
+                    raise ValueError("Contraseña incorrecta.")
+
+                # Verificar si el jugador ya está conectado
+                for pid, pl in players.items():
+                    if pid != id and pl["name"] == players[id]["name"]:
+                        # Guardar el estado del jugador anterior antes de cargar el nuevo
+                        guardar_jugador(players[pid])
+                        # Notificar al jugador anterior
+                        mud.send_message(pid, "\033[31mEl ordenador ha detectado una suplantación de identidad y ha decidido desconectar tu sistema neurológico por seguridad. Tu alma es expulsada y se transfiere a un banco de datos fuera de tu control para investigar la anomalía. Tu cuerpo recibe una consciencia validada por el sistema informático central del ordenador.\nDe ahora en adelante, estarás vigilado.\033[0m")
+                        # Desconectar al jugador anterior
+                        mud._handle_disconnect(pid)
+                        del players[pid]
+                        break
+
+                # Cargar o crear el jugador con el estado más reciente
                 ficha = cargar_o_crear_jugador(players[id]["name"], password)
                 # Usar la última sala guardada si existe, si no, "inicio"
                 players[id].update(ficha)
@@ -324,7 +355,7 @@ while True:
             mud.send_message(id, "  mirar          - Examina tu alrededor, e.g. 'mirar'")
             mud.send_message(id, "  ir <exit>      - Mover hacia la salida especificada, e.g. 'ir outside'")
             mud.send_message(id, "  <exit>         - Atajo para moverse a la salida indicada, e.g. 'outside'")
-            mud.send_message(id, "  ficha         - Comprobar la ficha y estado de tu personaje")
+            mud.send_message(id, "  estado         - Comprobar la ficha y estado de tu personaje")
             mud.send_message(id, "  matar <objetivo> - Atacar a otro personaje")
             mud.send_message(id, "  abandonar          - Abandonar el juego")
 
@@ -354,7 +385,7 @@ while True:
             if id in players:
                 del players[id]
 
-        elif command == "ficha":
+        elif command == "estado":
             ficha = players[id]
             mud.send_message(id, (
                 f"Eres {ficha['display_name']}, agente esclarecedor con Código de Seguridad: {NIVEL_DISPLAY.get(ficha.get('nivel', 0))} y clonado {ficha.get('clon', 1)} veces:\n"
