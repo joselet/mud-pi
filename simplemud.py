@@ -98,89 +98,94 @@ def move_player(id, exit_name):
         players[id]["room"] = "respawn"
         mostrar_sala_al_jugador(id)
 
-def cargar_o_crear_jugador(nombre, password):
+def cargar_jugador(nombre):
+    """Carga un jugador existente desde la base de datos."""
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
     cur.execute("SELECT * FROM players WHERE name = ?", (nombre.lower(),))
     row = cur.fetchone()
-    if row:
-        if row["password"] != password:
-            conn.close()
-            raise ValueError("Contraseña incorrecta.")
-        ficha = dict(row)
-    else:
-        # Atributos aleatorios
-        ficha = {
-            "name": nombre,
-            "password": password,
-            "nivel":0,
-            "clon": 1,
-            "pv": 100,
-            "e": 100,
-            "f": random.randint(1, 20),
-            "r": random.randint(1, 20),
-            "a": random.randint(1, 20),
-            "d": random.randint(1, 20),
-            "p": random.randint(1, 20),
-            "c": random.randint(1, 20),
-            "tm": random.randint(1, 20),
-            "pm": random.randint(1, 20),
-            "servicio": None,
-            "sociedad_secreta": None,
-            "sector": None,
-            "room": "inicio"
-        }
-        # Servicio
-        servicio_roll = random.randint(1, 20)
-        if servicio_roll <= 2:
-            ficha["servicio"] = "SSI"
-        elif servicio_roll <= 4:
-            ficha["servicio"] = "STC"
-        elif servicio_roll <= 8:
-            ficha["servicio"] = "SBD"
-        elif servicio_roll <= 11:
-            ficha["servicio"] = "SDF"
-        elif servicio_roll <= 14:
-            ficha["servicio"] = "SPL"
-        elif servicio_roll <= 16:
-            ficha["servicio"] = "SEG"
-        elif servicio_roll <= 18:
-            ficha["servicio"] = "SID"
-        else:
-            ficha["servicio"] = "SCP"
-        # Sociedad secreta
-        sociedad_roll = random.randint(1, 10)
-        if sociedad_roll <= 2:
-            ficha["sociedad_secreta"] = "Antimutantes"
-        elif sociedad_roll <= 4:
-            ficha["sociedad_secreta"] = "Piratas Informáticos"
-        elif sociedad_roll <= 7:
-            ficha["sociedad_secreta"] = "Comunistas"
-        else:
-            ficha["sociedad_secreta"] = "Iglesia Primitiva del Cristo Programador"
-        # Sector
-        sector_roll = random.randint(1, 10)
-        if sector_roll <= 2:
-            ficha["sector"] = "OTE"
-        elif sector_roll <= 4:
-            ficha["sector"] = "EKO"
-        elif sector_roll <= 7:
-            ficha["sector"] = "ANO"
-        else:
-            ficha["sector"] = "ICO"
-        
-        cur.execute("""
-            INSERT INTO players (name, password, nivel, clon, pv, e, f, r, a, d, p, c, tm, pm, servicio, sociedad_secreta, sector, room)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            ficha["name"], ficha["password"], ficha["nivel"], ficha["clon"], ficha["pv"], ficha["e"], ficha["f"], ficha["r"], ficha["a"],
-            ficha["d"], ficha["p"], ficha["c"], ficha["tm"], ficha["pm"], ficha["servicio"],
-            ficha["sociedad_secreta"], ficha["sector"], ficha["room"]
-        ))
-        conn.commit()
     conn.close()
-    # generar un display_name
+    if not row:
+        raise ValueError("Jugador no encontrado.")
+    ficha = dict(row)
+    ficha["display_name"] = f"{ficha['name'].capitalize()}-{ficha['sector']}-{ficha['clon']}"
+    return ficha
+
+def crear_jugador(nombre, password):
+    """Crea un nuevo jugador y lo guarda en la base de datos."""
+    ficha = {
+        "name": nombre,
+        "password": password,
+        "nivel": 0,
+        "clon": 1,
+        "pv": 100,
+        "e": 100,
+        "f": random.randint(1, 20),
+        "r": random.randint(1, 20),
+        "a": random.randint(1, 20),
+        "d": random.randint(1, 20),
+        "p": random.randint(1, 20),
+        "c": random.randint(1, 20),
+        "tm": random.randint(1, 20),
+        "pm": random.randint(1, 20),
+        "servicio": None,
+        "sociedad_secreta": None,
+        "sector": None,
+        "room": "inicio"
+    }
+    # Servicio
+    servicio_roll = random.randint(1, 20)
+    if servicio_roll <= 2:
+        ficha["servicio"] = "SSI"
+    elif servicio_roll <= 4:
+        ficha["servicio"] = "STC"
+    elif servicio_roll <= 8:
+        ficha["servicio"] = "SBD"
+    elif servicio_roll <= 11:
+        ficha["servicio"] = "SDF"
+    elif servicio_roll <= 14:
+        ficha["servicio"] = "SPL"
+    elif servicio_roll <= 16:
+        ficha["servicio"] = "SEG"
+    elif servicio_roll <= 18:
+        ficha["servicio"] = "SID"
+    else:
+        ficha["servicio"] = "SCP"
+    # Sociedad secreta
+    sociedad_roll = random.randint(1, 10)
+    if sociedad_roll <= 2:
+        ficha["sociedad_secreta"] = "Antimutantes"
+    elif sociedad_roll <= 4:
+        ficha["sociedad_secreta"] = "Piratas Informáticos"
+    elif sociedad_roll <= 7:
+        ficha["sociedad_secreta"] = "Comunistas"
+    else:
+        ficha["sociedad_secreta"] = "Iglesia Primitiva del Cristo Programador"
+    # Sector
+    sector_roll = random.randint(1, 10)
+    if sector_roll <= 2:
+        ficha["sector"] = "OTE"
+    elif sector_roll <= 4:
+        ficha["sector"] = "EKO"
+    elif sector_roll <= 7:
+        ficha["sector"] = "ANO"
+    else:
+        ficha["sector"] = "ICO"
+
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+    cur.execute("""
+        INSERT INTO players (name, password, nivel, clon, pv, e, f, r, a, d, p, c, tm, pm, servicio, sociedad_secreta, sector, room)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        ficha["name"], ficha["password"], ficha["nivel"], ficha["clon"], ficha["pv"], ficha["e"], ficha["f"], ficha["r"], ficha["a"],
+        ficha["d"], ficha["p"], ficha["c"], ficha["tm"], ficha["pm"], ficha["servicio"],
+        ficha["sociedad_secreta"], ficha["sector"], ficha["room"]
+    ))
+    conn.commit()
+    conn.close()
+
     ficha["display_name"] = f"{ficha['name'].capitalize()}-{ficha['sector']}-{ficha['clon']}"
     return ficha
 
@@ -303,35 +308,35 @@ while True:
                 mud.send_message(id, "Personaje encontrado. Dame la contraseña:")
             else:
                 mud.send_message(id, "Personaje no encontrado. Vamos a crearlo. Por favor, establece una contraseña:")
-
+                players[id]["crear_jugador"] = True
         elif players[id].get("awaiting_password"):
             # Step 2: Handle password input with retry mechanism
             try:
                 password = command.strip()
-                # Validar la contraseña antes de proceder
-                if not validar_contraseña(players[id]["name"], password):
-                    raise ValueError("Contraseña incorrecta.")
+                if players[id].get("crear_jugador"):
+                    # Crear un nuevo jugador
+                    ficha = crear_jugador(players[id]["name"], password)
+                else:
+                    # Validar la contraseña y cargar el jugador existente
+                    if not validar_contraseña(players[id]["name"], password):
+                        raise ValueError("Contraseña incorrecta.")
+                    ficha = cargar_jugador(players[id]["name"])
 
                 # Verificar si el jugador ya está conectado
                 for pid, pl in players.items():
                     if pid != id and pl["name"] == players[id]["name"]:
-                        # Guardar el estado del jugador anterior antes de cargar el nuevo
                         guardar_jugador(players[pid])
-                        # Notificar al jugador anterior
-                        mud.send_message(pid, "\033[31mEl ordenador ha detectado una suplantación de identidad y ha decidido desconectar tu sistema neurológico por seguridad. Tu alma es expulsada y se transfiere a un banco de datos fuera de tu control para investigar la anomalía. Tu cuerpo recibe una consciencia validada por el sistema informático central del ordenador.\nDe ahora en adelante, estarás vigilado.\033[0m")
-                        # Desconectar al jugador anterior
+                        mud.send_message(pid, "\033[31mEl ordenador ha detectado una suplantación de identidad...\033[0m")
                         mud._handle_disconnect(pid)
                         del players[pid]
                         break
 
-                # Cargar o crear el jugador con el estado más reciente
-                ficha = cargar_o_crear_jugador(players[id]["name"], password)
-                # Usar la última sala guardada si existe, si no, "inicio"
+                # Actualizar el estado del jugador
                 players[id].update(ficha)
                 players[id]["awaiting_password"] = False
                 mud.send_message(id, f"Bienvenido al juego, {players[id]['display_name']}. Escribe 'ayuda' para obtener una lista de comandos.")
                 mostrar_sala_al_jugador(id)
-                # Notificar a todos los jugadores que alguien ha entrado
+                # Notificar a otros jugadores
                 for pid, pl in players.items():
                     if pid != id:
                         mud.send_message(pid, f"[info] {players[id]['display_name']} entró al juego.")
@@ -406,20 +411,9 @@ while True:
             ))
 
         elif command == "matar":
-            # Generar un array con los jugadores en la sala (excluyendo al jugador actual)
-            players_here = [pl["name"].strip().lower() for pid, pl in players.items() 
-                            if players[pid]["room"] == players[id]["room"] and pid != id]
-            # Asignar target_name y mostrar su valor
-            target_name = params.strip().lower()
-            # Verificar si el objetivo está en la lista de jugadores en la sala
-            if target_name in players_here:
-                # Encontrar el ID del jugador objetivo
-                victima_id = next(pid for pid, pl in players.items() 
-                                  if pl["name"].strip().lower() == target_name 
-                                  and players[pid]["room"] == players[id]["room"])
-                iniciar_combate(players, id, players[victima_id]["name"], mud)
-            else:
-                mud.send_message(id, f"No se encontró al jugador '{params.strip()}'.")
+            # Iniciar combate usando la función de sistema_de_combate
+            iniciar_combate(players, id, params, mud)
+
         else:
             # Comprobar si el comando es una salida válida en la sala actual
             try:
