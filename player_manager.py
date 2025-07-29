@@ -79,6 +79,7 @@ class PlayerManager:
         conn.close()
 
         ficha["display_name"] = f"{ficha['name'].capitalize()}-{ficha['sector']}-{ficha['clon']}"
+        print(f"[LOG] Jugador creado: {ficha['display_name']}")
         return ficha
 
     def load_player(self, name):
@@ -89,7 +90,9 @@ class PlayerManager:
         row = cur.fetchone()
         conn.close()
         if not row:
-            raise ValueError("Jugador no encontrado.")
+            # raise ValueError("Jugador no encontrado.")
+            print(f"[WRN] Error loading player (name= {name}): Jugador no encontrado. Crear?")
+            return None
         ficha = dict(row)
         ficha["display_name"] = f"{ficha['name'].capitalize()}-{ficha['sector']}-{ficha['clon']}"
         return ficha

@@ -35,7 +35,7 @@ NIVEL_DISPLAY = {
 
 # Colores ANSI para los niveles
 NIVEL_COLOR = {
-    0: "\033[37m",  # IR (37)
+    0: "\033[90m",  # IR (37)
     1: "\033[91m",  # R
     2: "\033[33m",  # N
     3: "\033[93m",  # Y
@@ -129,18 +129,19 @@ class MudGame:
                     self.players[id]["password_attempts"] += 1
                     if self.players[id]["password_attempts"] >= 3:
                         self.mud.send_message(id, "Demasiados intentos fallidos. Desconectando.")
+                        print(f"[WRN] El jugador (id: {id}) {self.players[id]['display_name']} se desconectó después de demasiados intentos fallidos en la identificación.")
                         self.mud._handle_disconnect(id)
                         del self.players[id]
                     else:
                         self.mud.send_message(id, f"Error: {e}. Inténtalo de nuevo ({3 - self.players[id]['password_attempts']} intentos restantes).")
             elif command == "ayuda":
-                self.mud.send_message(id, "Commands:")
+                self.mud.send_message(id, "Comandos básicos:")
                 self.mud.send_message(id, "  decir <message>  - Decir algo en voz alta")
-                self.mud.send_message(id, "  mirar          - Examina tu alrededor")
-                self.mud.send_message(id, "  ir <exit>      - Mover hacia la salida especificada")
-                self.mud.send_message(id, "  estado         - Comprobar la ficha y estado de tu personaje")
+                self.mud.send_message(id, "  mirar            - Examina tu alrededor")
+                self.mud.send_message(id, "  ir <exit>        - Mover hacia la salida especificada")
+                self.mud.send_message(id, "  estado           - Comprobar la ficha y estado de tu personaje")
                 self.mud.send_message(id, "  matar <objetivo> - Atacar a otro personaje")
-                self.mud.send_message(id, "  abandonar      - Abandonar el juego")
+                self.mud.send_message(id, "  abandonar        - Abandonar el juego")
             elif command == "decir":
                 for pid, pl in self.players.items():
                     if self.players[pid]["room"] == self.players[id]["room"]:
