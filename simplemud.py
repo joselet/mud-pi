@@ -1,5 +1,14 @@
 #!/usr/bin/env python
 
+from mud_game import MudGame
+
+DB_PATH = "data/mud.db"
+
+if __name__ == "__main__":
+    game = MudGame(DB_PATH)
+    game.run()
+
+"""
 import time
 import sqlite3
 import random
@@ -133,7 +142,7 @@ def move_player(id, exit_name):
         mostrar_sala_al_jugador(id)
 
 def cargar_jugador(nombre):
-    """Carga un jugador existente desde la base de datos."""
+    # Carga un jugador existente desde la base de datos.
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
@@ -147,7 +156,7 @@ def cargar_jugador(nombre):
     return ficha
 
 def crear_jugador(nombre, password):
-    """Crea un nuevo jugador y lo guarda en la base de datos."""
+    # Crea un nuevo jugador y lo guarda en la base de datos.
     ficha = {
         "name": nombre,
         "password": password,
@@ -209,10 +218,10 @@ def crear_jugador(nombre, password):
 
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
-    cur.execute("""
+    cur.execute("
         INSERT INTO players (name, password, nivel, clon, pv, e, f, r, a, d, p, c, tm, pm, servicio, sociedad_secreta, sector, room)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (
+    ", (
         ficha["name"], ficha["password"], ficha["nivel"], ficha["clon"], ficha["pv"], ficha["e"], ficha["f"], ficha["r"], ficha["a"],
         ficha["d"], ficha["p"], ficha["c"], ficha["tm"], ficha["pm"], ficha["servicio"],
         ficha["sociedad_secreta"], ficha["sector"], ficha["room"]
@@ -226,12 +235,12 @@ def crear_jugador(nombre, password):
 def guardar_jugador(ficha):
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
-    cur.execute("""
+    cur.execute("
         UPDATE players SET
             nivel = ?, clon = ?, pv = ?, e = ?, f = ?, r = ?, a = ?, d = ?, p = ?, c = ?, tm = ?, pm = ?,
             servicio = ?, sociedad_secreta = ?, sector = ?, room = ?
         WHERE name = ?
-    """, (
+    ", (
         ficha.get("nivel", 0), ficha.get("clon", 1), ficha["pv"], ficha["e"], ficha["f"], ficha["r"], ficha["a"], ficha["d"],
         ficha["p"], ficha["c"], ficha["tm"], ficha["pm"], ficha["servicio"], ficha["sociedad_secreta"], ficha.get("sector", None), ficha["room"], ficha["name"]
     ))
@@ -259,7 +268,7 @@ def mostrar_sala_al_jugador(id):
 
 
 def validar_contraseña(nombre, password):
-    """Valida la contraseña de un jugador existente."""
+    # Valida la contraseña de un jugador existente.
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
@@ -397,206 +406,6 @@ def finalizar_combate(ganador_id, perdedor_id, players, mud, mostrar_sala_al_jug
 
     # Restablecer un porcentaje de la vida del perdedor
     players[perdedor_id]["pv"] = 25
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Main game loop
-while True:
-    time.sleep(0.2)
-    mud.update()
-
-    for id in mud.get_new_players():
-        # Initialize the player with proper flags
-        players[id] = {"name": None, "room": None, "awaiting_name": True}
-        mud.send_message(id, "Qué nombre tiene tu personaje?")  # Ask for the name once
-
-    for id in mud.get_disconnected_players():
-        if id not in players:
-            continue
-        # Guardar la sala actual en la base de datos antes de eliminar al jugador
-        ficha = players[id]
-        ficha["room"] = players[id]["room"]
-        guardar_jugador(ficha)
-        # Notificar a todos los jugadores que alguien ha salido
-        for pid, pl in players.items():
-            if pid != id:
-                mud.send_message(pid, f"{players[id]['display_name']} salió del juego.")
-        del players[id]
-
-    for id, command, params in mud.get_commands():
-        if id not in players:
-            continue
-
-        # Verificar si el comando es un alias de salida
-        if command in EXIT_ALIASES:
-            command = EXIT_ALIASES[command]  # Traducir alias al nombre completo
-
-        if players[id]["awaiting_name"]:
-            # Handle name input
-            player_name = command.strip()
-            players[id]["name"] = player_name
-            players[id]["awaiting_name"] = False
-            players[id]["awaiting_password"] = True
-            players[id]["password_attempts"] = 0  # Initialize password attempts
-            # Comprobar si el jugador existe en la base de datos
-            conn = sqlite3.connect(DB_PATH)
-            cur = conn.cursor()
-            cur.execute("SELECT 1 FROM players WHERE name = ?", (player_name.lower(),))
-            exists = cur.fetchone()
-            conn.close()
-            if exists:
-                mud.send_message(id, "Personaje encontrado. Dame la contraseña:")
-            else:
-                mud.send_message(id, "Personaje no encontrado. Vamos a crearlo. Por favor, establece una contraseña:")
-                players[id]["crear_jugador"] = True
-        elif players[id].get("awaiting_password"):
-            # Step 2: Handle password input with retry mechanism
-            try:
-                password = command.strip()
-                if players[id].get("crear_jugador"):
-                    # Crear un nuevo jugador
-                    ficha = crear_jugador(players[id]["name"], password)
-                else:
-                    # Validar la contraseña y cargar el jugador existente
-                    if not validar_contraseña(players[id]["name"], password):
-                        raise ValueError("Contraseña incorrecta.")
-                    ficha = cargar_jugador(players[id]["name"])
-
-                # Verificar si el jugador ya está conectado
-                for pid, pl in players.items():
-                    if pid != id and pl["name"] == players[id]["name"]:
-                        guardar_jugador(players[pid])
-                        mud.send_message(pid, "\033[31mEl ordenador ha detectado una suplantación de identidad y ha decidido desconectar tu sistema neurológico por seguridad. Tu alma es expulsada y se transfiere a un banco de datos fuera de tu control para investigar la anomalía. Tu cuerpo recibe una consciencia validada por el sistema informático central del ordenador.\nDe ahora en adelante, estarás vigilado.\033[0m")
-                        mud._handle_disconnect(pid)
-                        del players[pid]
-                        break
-
-                # Actualizar el estado del jugador
-                players[id].update(ficha)
-                players[id]["awaiting_password"] = False
-                mud.send_message(id, f"Bienvenido al juego, {players[id]['display_name']}. Escribe 'ayuda' para obtener una lista de comandos.")
-                mostrar_sala_al_jugador(id)
-                # Notificar a otros jugadores
-                for pid, pl in players.items():
-                    if pid != id:
-                        mud.send_message(pid, f"[info] {players[id]['display_name']} entró al juego.")
-                # Notificar a los jugadores de la sala actual que alguien acaba de aparecer
-                for pid, pl in players.items():
-                    if players[pid]["room"] == players[id]["room"] and pid != id:
-                        mud.send_message(pid, f"{players[id]['display_name']} acaba de aparecer en la sala por arte de magia.")
-                print(f"[LOG] {players[id]['name']} entró al juego (id={id})")
-            except ValueError as e:
-                players[id]["password_attempts"] += 1
-                if players[id]["password_attempts"] >= 3:
-                    mud.send_message(id, "Too many failed attempts. Disconnecting.")
-                    mud._handle_disconnect(id)
-                    del players[id]
-                else:
-                    mud.send_message(id, f"Error: {e}. Please try again ({3 - players[id]['password_attempts']} attempts left).")
-
-        elif command == "ayuda":
-            mud.send_message(id, "Commands:")
-            mud.send_message(id, "  decir <message>  - Decir algo en voz alta, e.g. 'decir Hola a todos'")
-            mud.send_message(id, "  mirar          - Examina tu alrededor, e.g. 'mirar'")
-            mud.send_message(id, "  ir <exit>      - Mover hacia la salida especificada, e.g. 'ir outside'")
-            mud.send_message(id, "  <exit>         - Atajo para moverse a la salida indicada, e.g. 'outside'")
-            mud.send_message(id, "  estado         - Comprobar la ficha y estado de tu personaje")
-            mud.send_message(id, "  matar <objetivo> - Atacar a otro personaje")
-            mud.send_message(id, "  abandonar          - Abandonar el juego")
-
-        elif command == "decir":
-            for pid, pl in players.items():
-                if players[pid]["room"] == players[id]["room"]:
-                    mud.send_message(pid, f"{players[id]['display_name']} dice: {params}")
-
-        elif command == "mirar":
-            mostrar_sala_al_jugador(id)
-
-        elif command == "ir":
-            move_player(id, params)
-
-        elif command == "abandonar":
-            mud.send_message(id, "Desconectando. Adiós!")
-            # Guardar la sala actual en la base de datos antes de eliminar al jugador
-            ficha = players[id]
-            ficha["room"] = players[id]["room"]
-            guardar_jugador(ficha)
-            # Notificar al resto de jugadores que alguien ha salido
-            for pid, pl in players.items():
-                if pid != id:
-                    mud.send_message(pid, f"[info] {players[id]['name']} se marchó del juego.")
-            print(f"[LOG] {players[id]['name']} salió del juego (id={id})")
-            mud._handle_disconnect(id)
-            if id in players:
-                del players[id]
-
-        elif command == "estado":
-            ficha = players[id]
-            mud.send_message(id, (
-                f"Eres {ficha['display_name']}, agente esclarecedor con Código de Seguridad:{NIVEL_COLOR.get(ficha.get('nivel', 0))} {NIVEL_DISPLAY.get(ficha.get('nivel', 0))} {NIVEL_COLOR.get('reset')}y clonado {ficha.get('clon', 1)} veces:\n"
-                f"Te han asignado al servicio: {ficha.get('servicio', 'Ninguno')}\n"
-                f"Perteneces a la sociedad secreta: {ficha.get('sociedad_secreta', 'Ninguna')}\n"
-                f"Vives en el sector: {ficha.get('sector', 'Desconocido')}\n"
-                f"  Vida (pv): {ficha.get('pv', 0)}\n"
-                f"  Energía (e): {ficha.get('e', 0)}\n"
-                f"  Fuerza (f): {ficha.get('f', 0)}\n"
-                f"  Resistencia (r): {ficha.get('r', 0)}\n"
-                f"  Agilidad (a): {ficha.get('a', 0)}\n"
-                f"  Destreza (d): {ficha.get('d', 0)}\n"
-                f"  Percepcion (p): {ficha.get('p', 0)}\n"
-                f"  Cinismo (c): {ficha.get('c', 0)}\n"
-                f"  Talento mecánico (tm): {ficha.get('tm', 0)}\n"
-                f"  Poder mutante (pm): {ficha.get('pm', 0)}\n"
-                f"  Sala actual: {ficha.get('room', 'Desconocida')}"
-            ))
-
-        elif command == "matar":
-            # Iniciar combate usando la función de sistema_de_combate
-            iniciar_combate(players, id, params, mud)
-
-        else:
-            # Comprobar si el comando es una salida válida en la sala actual
-            try:
-                room = load_room(players[id]["room"])
-                if command in room["exits"]:
-                    move_player(id, command)
-                else:
-                    mud.send_message(id, f"No conozco la orden '{command}' (escribe: ayuda para ver los comandos disponibles)")
-            except ValueError as e:
-                print(f"[ERR] Error loading room (pid= {id}): {e}")  # Debug por salida estándar
-                mud.send_message(id, "\033[31mHas sufrido un fallo espacio/tiempo y apareces en la incubadora.\033[0m")
-                players[id]["room"] = "respawn"
-                mostrar_sala_al_jugador(id)
-    # Procesar turnos de combate
-    procesar_turno_combate(players, mud)
+"""
 
 
