@@ -54,23 +54,23 @@ def procesar_turno_combate(players, mud, mostrar_sala_al_jugador):
         # Verificar si el atacante tiene suficiente energía
         if atacante["e"] <= 0:
             mud.send_message(atacante_id, "No tienes suficiente energía para atacar.")
+            mud.send_message(victima_id, f"{atacante['display_name']} Realiza un penoso gesto de ataque, pero agotado desfallece en el intento.")
             combate["turno"] = victima_id  # Pasar el turno a la víctima
-            continue
+        else:
+            # Calcular daño
+            tirada = random.randint(0, 5)
+            dano = max(0, atacante["f"] + tirada - victima["d"])
+            victima["pv"] -= dano
+            atacante["e"] -= 1  # Restar energía al atacante
 
-        # Calcular daño
-        tirada = random.randint(0, 5)
-        dano = max(0, atacante["f"] + tirada - victima["d"])
-        victima["pv"] -= dano
-        atacante["e"] -= 1  # Restar energía al atacante
+            # Notificar a los jugadores
+            mud.send_message(atacante_id, f"Tirada: {atacante['f']} (Fue.A) + {tirada} - {victima['d']} (Des.D) = {dano} -> Has infligido {dano} de daño a {victima['display_name']}.")
+            mud.send_message(victima_id, f"Tirada: {atacante['f']} (Fue.A) + {tirada} - {victima['d']} (Des.D) = {dano} -> Has recibido {dano} de daño de {atacante['display_name']}. Puntos de vida restantes: {victima['pv']}")
 
-        # Notificar a los jugadores
-        mud.send_message(atacante_id, f"Tirada: {atacante['f']} (Fue.A) + {tirada} - {victima['d']} (Des.D) = {dano} -> Has infligido {dano} de daño a {victima['display_name']}.")
-        mud.send_message(victima_id, f"Tirada: {atacante['f']} (Fue.A) + {tirada} - {victima['d']} (Des.D) = {dano} -> Has recibido {dano} de daño de {atacante['display_name']}. Puntos de vida restantes: {victima['pv']}")
-
-        # Verificar si la víctima ha muerto
-        if victima["pv"] <= 0:
-            finalizar_combate(atacante_id, victima_id, players, mud, mostrar_sala_al_jugador)
-            continue
+            # Verificar si la víctima ha muerto
+            if victima["pv"] <= 0:
+                finalizar_combate(atacante_id, victima_id, players, mud, mostrar_sala_al_jugador)
+                continue
 
         # Pasar el turno a la víctima
         combate["turno"] = victima_id
@@ -92,6 +92,7 @@ def procesar_turno_combate(players, mud, mostrar_sala_al_jugador):
                 continue
         else:
             mud.send_message(victima_id, "No tienes suficiente energía para contraatacar.")
+            mud.send_message(atacante_id, f"{victima['display_name']} Realiza un penoso gesto de ataque, pero agotado desfallece en el intento.")
 
         # Si ninguno muere, devolver el turno al atacante
         combate["turno"] = atacante_id
