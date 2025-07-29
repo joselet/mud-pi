@@ -6,11 +6,29 @@ import random
 from mudserver import MudServer
 from sistema_de_combate import iniciar_combate, procesar_turno_combate
 
-# Carpeta donde están almacenadas las salas
-ROOMS_DIR = "rooms"
-# Carpeta donde se almacenan las fichas de los jugadores
-PLAYERS_DIR = "players"
 DB_PATH = "data/mud.db"
+
+# Stores the players in the game
+players = {}
+
+# Start the server
+mud = MudServer()
+
+# Diccionario de alias para las salidas típicas
+EXIT_ALIASES = {
+    "n": "norte",
+    "s": "sur",
+    "e": "este",
+    "o": "oeste",
+    "ne": "noreste",
+    "no": "noroeste",
+    "se": "sudeste",
+    "so": "sudoeste",
+    "ar": "arriba",
+    "ab": "abajo",
+    "de": "dentro",
+    "fu": "fuera"
+}
 
 #descripcion de los niveles: infrarojo, rojo, naranja, amarillo, verde, indigo, morado, ultravioleta, x
 NIVEL_DISPLAY = {
@@ -24,6 +42,23 @@ NIVEL_DISPLAY = {
     7: "UV",
     8: "X"
 }
+
+
+# https://stackoverflow.com/questions/4842424/list-of-ansi-color-escape-sequences
+# https://en.wikipedia.org/wiki/ANSI_escape_code
+NIVEL_COLOR = {
+    0: "\033[37m",  # IR (37)
+    1: "\033[91m",  # R
+    2: "\033[33m",  # N
+    3: "\033[93m",  # Y
+    4: "\033[92m",  # V
+    5: "\033[96m",  # I (o 94)
+    6: "\033[95m",  # M
+    7: "\033[35m",  # UV
+    8: "\033[97m",   # X
+    "reset": "\033[0m"  # Reset color
+}
+
 # Cache para las salas cargadas
 rooms_cache = {}
 
@@ -224,28 +259,6 @@ def mostrar_sala_al_jugador(id):
         mostrar_sala_al_jugador(id)
 
 
-# Stores the players in the game
-players = {}
-
-# Start the server
-mud = MudServer()
-
-# Diccionario de alias para las salidas típicas
-EXIT_ALIASES = {
-    "n": "norte",
-    "s": "sur",
-    "e": "este",
-    "o": "oeste",
-    "ne": "noreste",
-    "no": "noroeste",
-    "se": "sudeste",
-    "so": "sudoeste",
-    "ar": "arriba",
-    "ab": "abajo",
-    "de": "dentro",
-    "fu": "fuera"
-}
-
 def validar_contraseña(nombre, password):
     """Valida la contraseña de un jugador existente."""
     conn = sqlite3.connect(DB_PATH)
@@ -393,7 +406,7 @@ while True:
         elif command == "estado":
             ficha = players[id]
             mud.send_message(id, (
-                f"Eres {ficha['display_name']}, agente esclarecedor con Código de Seguridad: {NIVEL_DISPLAY.get(ficha.get('nivel', 0))} y clonado {ficha.get('clon', 1)} veces:\n"
+                f"Eres {ficha['display_name']}, agente esclarecedor con Código de Seguridad:{NIVEL_COLOR.get(ficha.get('nivel', 0))} {NIVEL_DISPLAY.get(ficha.get('nivel', 0))} {NIVEL_COLOR.get('reset')}y clonado {ficha.get('clon', 1)} veces:\n"
                 f"Te han asignado al servicio: {ficha.get('servicio', 'Ninguno')}\n"
                 f"Perteneces a la sociedad secreta: {ficha.get('sociedad_secreta', 'Ninguna')}\n"
                 f"Vives en el sector: {ficha.get('sector', 'Desconocido')}\n"

@@ -64,13 +64,11 @@ def procesar_turno_combate(players, mud, mostrar_sala_al_jugador):
         atacante["e"] -= 1  # Restar energía al atacante
 
         # Notificar a los jugadores
-        mud.send_message(atacante_id, f"Tirada: {atacante['f']} (Fue.A) + {tirada} - {victima['d']} (Des.D) = {dano}\nHas infligido {dano} de daño a {victima['display_name']}.")
-        mud.send_message(victima_id, f"Tirada: {atacante['f']} (Fue.A) + {tirada} - {victima['d']} (Des.D) = {dano}\nHas recibido {dano} de daño de {atacante['display_name']}.\nPuntos de vida restantes: {victima['pv']}")
+        mud.send_message(atacante_id, f"Tirada: {atacante['f']} (Fue.A) + {tirada} - {victima['d']} (Des.D) = {dano} -> Has infligido {dano} de daño a {victima['display_name']}.")
+        mud.send_message(victima_id, f"Tirada: {atacante['f']} (Fue.A) + {tirada} - {victima['d']} (Des.D) = {dano} -> Has recibido {dano} de daño de {atacante['display_name']}. Puntos de vida restantes: {victima['pv']}")
 
         # Verificar si la víctima ha muerto
         if victima["pv"] <= 0:
-            mud.send_message(atacante_id, f"\033[93m¡Has derrotado a {victima['display_name']}!\033[0m")
-            mud.send_message(victima_id, "\033[31m¡Has sido derrotado!\033[0m")
             finalizar_combate(atacante_id, victima_id, players, mud, mostrar_sala_al_jugador)
             continue
 
@@ -85,20 +83,34 @@ def procesar_turno_combate(players, mud, mostrar_sala_al_jugador):
             victima["e"] -= 1  # Restar energía a la víctima
 
             # Notificar a los jugadores
-            mud.send_message(victima_id, f"En respuesta, Has infligido {respuesta_dano} de daño a {atacante['display_name']}.\nTirada: {victima['f']} (Fue.V) + {respuesta_tirada} - {atacante['d']} (Des.A) = {respuesta_dano}")
-            mud.send_message(atacante_id, f"En respuesta, Has recibido {respuesta_dano} de daño de {victima['display_name']}.\nTirada: {victima['f']} (Fue.V) + {respuesta_tirada} - {atacante['d']} (Des.A) = {respuesta_dano}\nPuntos de vida restantes: {atacante['pv']}")
+            mud.send_message(victima_id, f"Tirada: {victima['f']} (Fue.V) + {respuesta_tirada} - {atacante['d']} (Des.A) = {respuesta_dano} -> En respuesta, Has infligido {respuesta_dano} de daño a {atacante['display_name']}.")
+            mud.send_message(atacante_id, f"Tirada: {victima['f']} (Fue.V) + {respuesta_tirada} - {atacante['d']} (Des.A) = {respuesta_dano} -> En respuesta, Has recibido {respuesta_dano} de daño de {victima['display_name']}. Puntos de vida restantes: {atacante['pv']}")
 
             # Verificar si el atacante ha muerto
             if atacante["pv"] <= 0:
-                mud.send_message(victima_id, f"\033[93m¡Has derrotado a {atacante['display_name']}!\033[0m")
-                mud.send_message(atacante_id, "\033[31m¡Has sido derrotado!\033[0m")
                 finalizar_combate(victima_id, atacante_id, players, mud, mostrar_sala_al_jugador)
                 continue
+        else:
+            mud.send_message(victima_id, "No tienes suficiente energía para contraatacar.")
 
         # Si ninguno muere, devolver el turno al atacante
         combate["turno"] = atacante_id
 
 def finalizar_combate(ganador_id, perdedor_id, players, mud, mostrar_sala_al_jugador):
+    # Finaliza el combate entre los jugadores
+    del combates_activos[ganador_id]
+    del combates_activos[perdedor_id]
+
+    # Notificar al ganador y al perdedor
+    mud.send_message(ganador_id, f"\033[93m¡Has derrotado a {players[perdedor_id]['display_name']}!\033[0m")
+    mud.send_message(perdedor_id, f"\033[31m¡Has sido derrotado por {players[ganador_id]['display_name']}!\033[0m")
+    mud.send_message(perdedor_id, "\033[93mDebido a tu pobre genética, las celulas de tu cuerpo se deshacen lentamente debido a la falta de irrigación mantenida por tu bomba de fluido sanguíneo.\nPor imperativa del ordenador, los restos de tu triste cuerpo son trasladados a la planta de regeneración para ser reciclados y finalmene formar una nueva vida.\nTu alma y tu psique es transferida a un nuevo cuerpo.\033[0m")
+
+    # Notificar a todos los jugadores que alguien ha muerto
+    for pid, pl in players.items():
+        if pid != perdedor_id:
+            mud.send_message(pid, f"[info] {players[perdedor_id]['name']} ha muerto.")
+
     # Enviar al perdedor a la sala de incubadora
     players[perdedor_id]["room"] = "respawn"
     mostrar_sala_al_jugador(perdedor_id)
@@ -109,12 +121,3 @@ def finalizar_combate(ganador_id, perdedor_id, players, mud, mostrar_sala_al_jug
 
     # Restablecer un porcentaje de la vida del perdedor
     players[perdedor_id]["pv"] = 25
-
-    # Finaliza el combate entre los jugadores
-    del combates_activos[ganador_id]
-    del combates_activos[perdedor_id]
-
-    # Notificar a todos los jugadores que alguien ha muerto
-    for pid, pl in players.items():
-        if pid != perdedor_id:
-            mud.send_message(pid, f"[info] {players[perdedor_id]['name']} ha muerto.")
