@@ -26,14 +26,30 @@ class RoomManager:
         exits = {row["exit_name"]: row["target_room"] for row in cur.fetchall()}
 
         # Buscar los objetos de la sala
-        cur.execute("SELECT object_name, description, interaction_command, interaction_effect, interaction_message FROM room_objects WHERE room_name = ?", (room_name.lower(),))
-        objects = {row["object_name"]: {"description": row["description"], "interaction_command": row["interaction_command"], "interaction_effect": row["interaction_effect"], "interaction_message": row["interaction_message"]} for row in cur.fetchall()}
+        cur.execute("SELECT object_name, description FROM room_objects WHERE room_name = ?", (room_name.lower(),))
+        objects = {}
+        for row in cur.fetchall():
+            obj_name = row["object_name"]
+            objects[obj_name] = {
+                "description": row["description"],
+                "interactions": {}  # Aquí almacenaremos los comandos y efectos
+            }
+
+        # Buscar las interacciones de los objetos
+        cur.execute("SELECT object_name, command, effect, message FROM object_interactions WHERE room_name = ?", (room_name.lower(),))
+        for row in cur.fetchall():
+            obj_name = row["object_name"]
+            if obj_name in objects:
+                objects[obj_name]["interactions"][row["command"]] = {
+                    "effect": row["effect"],
+                    "message": row["message"]
+                }
 
         room_data = {
             "title": room_row["title"],
             "description": room_row["description"],
             "exits": exits,
-            "objects": objects  
+            "objects": objects  # Incluye los objetos con sus interacciones
         }
 
         conn.close()

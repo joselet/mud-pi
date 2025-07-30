@@ -168,9 +168,10 @@ class MudGame:
                             obj_name = params.lower()
                             if obj_name in room["objects"]:
                                 obj = room["objects"][obj_name]
-                                if obj["interaction_command"] == command:  # Verificar si el comando coincide con el del objeto
+                                if command in obj["interactions"]:  # Verificar si el comando está asociado al objeto
+                                    interaction = obj["interactions"][command]
                                     # Procesar el efecto de la interacción
-                                    effect = obj["interaction_effect"]
+                                    effect = interaction["effect"]
                                     if effect:
                                         key, value = effect.split("+")
                                         value = int(value)
@@ -178,10 +179,9 @@ class MudGame:
                                             self.players[id]["e"] = min(self.players[id].get("e", 0) + value, 100)  # Máximo 100 de energía
                                             self.mud.send_message(id, f"Recuperas {value} puntos de energía.")
                                         # Añadir otros posibles efectos aquí
-                                    else:
-                                        self.mud.send_message(id, f"No pasa nada al intentar '{command}' con {obj_name}.")
-                                    if obj["interaction_message"]: # Mensaje de interacción
-                                        self.mud.send_message(id, obj["interaction_message"])
+                                    # Enviar mensaje de interacción
+                                    if interaction["message"]:
+                                        self.mud.send_message(id, interaction["message"])
                                 else:
                                     self.mud.send_message(id, f"No puedes '{command}' con {obj_name}.")
                             else:
