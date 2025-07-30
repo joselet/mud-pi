@@ -7,25 +7,19 @@ class PlayerManager:
         self.db_path = db_path
 
     def create_player(self, name, password):
+        puntos = 0
+        while puntos < 80: # Asegurarse de que la suma de atributos sea al menos 80
+            f = random.randint(1, 20)
+            r = random.randint(1, 20)
+            a = random.randint(1, 20)
+            d = random.randint(1, 20)
+            p = random.randint(1, 20)
+            c = random.randint(1, 20)
+            tm = random.randint(1, 20)
+            pm = random.randint(1, 20)
+            puntos = f + r + a + d + p + c + tm + pm
         ficha = {
-            "name": name,
-            "password": password,
-            "nivel": 0,
-            "clon": 1,
-            "pv": 100,
-            "e": 100,
-            "f": random.randint(1, 20),
-            "r": random.randint(1, 20),
-            "a": random.randint(1, 20),
-            "d": random.randint(1, 20),
-            "p": random.randint(1, 20),
-            "c": random.randint(1, 20),
-            "tm": random.randint(1, 20),
-            "pm": random.randint(1, 20),
-            "servicio": None,
-            "sociedad_secreta": None,
-            "sector": None,
-            "room": "inicio"
+            "name": name,"password": password,"nivel": 0,"clon": 1,"pv": 100,"e": 100,"f": f,"r": r,"a": a,"d": d,"p": p,"c": c,"tm": tm,"pm": pm,"servicio": None,"sociedad_secreta": None,"sector": None,"room": "inicio"
         }
         # Servicio
         servicio_roll = random.randint(1, 20)
