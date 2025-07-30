@@ -1,5 +1,6 @@
 import sqlite3
 import random
+from config import NIVEL_DISPLAY, NIVEL_COLOR
 
 class PlayerManager:
     def __init__(self, db_path):
@@ -45,22 +46,22 @@ class PlayerManager:
         else:
             ficha["servicio"] = "SCP"
         # Sociedad secreta
-        sociedad_roll = random.randint(1, 10)
+        sociedad_roll = random.randint(1, 8)
         if sociedad_roll <= 2:
             ficha["sociedad_secreta"] = "Antimutantes"
         elif sociedad_roll <= 4:
             ficha["sociedad_secreta"] = "Piratas Informáticos"
-        elif sociedad_roll <= 7:
+        elif sociedad_roll <= 6:
             ficha["sociedad_secreta"] = "Comunistas"
         else:
             ficha["sociedad_secreta"] = "Iglesia Primitiva del Cristo Programador"
         # Sector
-        sector_roll = random.randint(1, 10)
+        sector_roll = random.randint(1, 8)
         if sector_roll <= 2:
             ficha["sector"] = "OTE"
         elif sector_roll <= 4:
             ficha["sector"] = "EKO"
-        elif sector_roll <= 7:
+        elif sector_roll <= 6:
             ficha["sector"] = "ANO"
         else:
             ficha["sector"] = "ICO"
@@ -94,23 +95,32 @@ class PlayerManager:
             print(f"[WRN] Error loading player (name= {name}): Jugador no encontrado. Crear?")
             return None
         ficha = dict(row)
-        ficha["display_name"] = f"{ficha['name'].capitalize()}-{ficha['sector']}-{ficha['clon']}"
+        if ficha.get("nivel") > 0:
+            ficha["display_name"] = f"{NIVEL_COLOR.get(ficha.get('nivel', 0))}{ficha['name'].capitalize()}-{NIVEL_DISPLAY.get(ficha.get('nivel', 0))}-{ficha['sector']}-{ficha['clon']}{NIVEL_COLOR.get('reset')}"
+        else:
+            ficha["display_name"] = f"{ficha['name'].capitalize()}-{ficha['sector']}-{ficha['clon']}"
+        
         return ficha
 
     def save_player(self, ficha):
-        conn = sqlite3.connect(self.db_path)
-        cur = conn.cursor()
-        cur.execute("""
-            UPDATE players SET
-                nivel = ?, clon = ?, pv = ?, e = ?, f = ?, r = ?, a = ?, d = ?, p = ?, c = ?, tm = ?, pm = ?,
-                servicio = ?, sociedad_secreta = ?, sector = ?, room = ?
-            WHERE name = ?
-        """, (
-            ficha.get("nivel", 0), ficha.get("clon", 1), ficha["pv"], ficha["e"], ficha["f"], ficha["r"], ficha["a"], ficha["d"],
-            ficha["p"], ficha["c"], ficha["tm"], ficha["pm"], ficha["servicio"], ficha["sociedad_secreta"], ficha.get("sector", None), ficha["room"], ficha["name"]
-        ))
-        conn.commit()
-        conn.close()
+        if ficha.get("clon"): # existe el jugador
+            conn = sqlite3.connect(self.db_path)
+            cur = conn.cursor()
+            cur.execute("""
+                UPDATE players SET
+                    nivel = ?, clon = ?, pv = ?, e = ?, f = ?, r = ?, a = ?, d = ?, p = ?, c = ?, tm = ?, pm = ?,
+                    servicio = ?, sociedad_secreta = ?, sector = ?, room = ?
+                WHERE name = ?
+            """, (
+                ficha.get("nivel", 0), ficha.get("clon", 1), ficha["pv"], ficha["e"], ficha["f"], ficha["r"], ficha["a"], ficha["d"],
+                ficha["p"], ficha["c"], ficha["tm"], ficha["pm"], ficha["servicio"], ficha["sociedad_secreta"], ficha.get("sector", None), ficha["room"], ficha["name"]
+            ))
+            conn.commit()
+            conn.close()
+            print(f"[LOG] Jugador guardado: {ficha['display_name']}")
+        else: # no existe el jugador
+            print(f"[WRN] Error saving player (name= {ficha['name']}): Jugador no encontrado. Crear?")
+
 
     def validate_password(self, name, password):
         conn = sqlite3.connect(self.db_path)
