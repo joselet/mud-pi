@@ -116,7 +116,16 @@ class MudGame:
                         if self.players[pid]["room"] == self.players[id]["room"]:
                             self.mud.send_message(pid, f"{self.players[id]['display_name']} dice: {params}")
                 elif command == "mirar":
-                    self.room_manager.show_room_to_player(id, self.players, self.mud)
+                    room = self.room_manager.load_room(self.players[id]["room"])
+                    if params:  # Si se especifica un objeto
+                        obj_name = params.lower()
+                        if obj_name in room["objects"]:
+                            obj = room["objects"][obj_name]
+                            self.mud.send_message(id, obj["description"])
+                        else:
+                            self.mud.send_message(id, f"No ves ningún '{obj_name}' aquí.")
+                    else: # Si no se especifica un objeto, mostrar la sala
+                        self.room_manager.show_room_to_player(id, self.players, self.mud)
                 elif command == "ir":
                     self.room_manager.move_player(id, params, self.players, self.mud)
                 elif command == "abandonar":
@@ -153,12 +162,35 @@ class MudGame:
                 elif command == "matar":
                     self.combat_system.start_combat(id, params)
                 else:
-                    try:
+                    try: # procesar otros comandos dinámicamente
                         room = self.room_manager.load_room(self.players[id]["room"])
-                        if command in room["exits"]:
-                            self.room_manager.move_player(id, command, self.players, self.mud)
-                        else:
-                            self.mud.send_message(id, f"No conozco la orden '{command}' (escribe: ayuda para ver los comandos disponibles)")
+                        if params:  # Si hay parámetros, como "beber fuente"
+                            obj_name = params.lower()
+                            if obj_name in room["objects"]:
+                                obj = room["objects"][obj_name]
+                                if obj["interaction_command"] == command:  # Verificar si el comando coincide con el del objeto
+                                    # Procesar el efecto de la interacción
+                                    effect = obj["interaction_effect"]
+                                    if effect:
+                                        key, value = effect.split("+")
+                                        value = int(value)
+                                        if key == "energia":
+                                            self.players[id]["e"] = min(self.players[id].get("e", 0) + value, 100)  # Máximo 100 de energía
+                                            self.mud.send_message(id, f"Recuperas {value} puntos de energía.")
+                                        # Añadir otros posibles efectos aquí
+                                    else:
+                                        self.mud.send_message(id, f"No pasa nada al intentar '{command}' con {obj_name}.")
+                                    if obj["interaction_message"]: # Mensaje de interacción
+                                        self.mud.send_message(id, obj["interaction_message"])
+                                else:
+                                    self.mud.send_message(id, f"No puedes '{command}' con {obj_name}.")
+                            else:
+                                self.mud.send_message(id, f"No ves ningún '{obj_name}' aquí.")
+                        else:  # Si no hay parámetros, procesar otros comandos dinámicos
+                            if command in room["exits"]:  # Si el comando es una salida
+                                self.room_manager.move_player(id, command, self.players, self.mud)
+                            else:
+                                self.mud.send_message(id, f"No conozco la orden '{command}' (escribe: ayuda para ver los comandos disponibles).")
                     except ValueError as e:
                         self.mud.send_message(id, "\033[31mHas sufrido un fallo espacio/tiempo y apareces en la incubadora.\033[0m")
                         self.players[id]["room"] = "respawn"

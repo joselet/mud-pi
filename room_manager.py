@@ -25,10 +25,15 @@ class RoomManager:
         cur.execute("SELECT exit_name, target_room FROM exits WHERE room_name = ?", (room_name.lower(),))
         exits = {row["exit_name"]: row["target_room"] for row in cur.fetchall()}
 
+        # Buscar los objetos de la sala
+        cur.execute("SELECT object_name, description, interaction_command, interaction_effect, interaction_message FROM room_objects WHERE room_name = ?", (room_name.lower(),))
+        objects = {row["object_name"]: {"description": row["description"], "interaction_command": row["interaction_command"], "interaction_effect": row["interaction_effect"], "interaction_message": row["interaction_message"]} for row in cur.fetchall()}
+
         room_data = {
             "title": room_row["title"],
             "description": room_row["description"],
-            "exits": exits
+            "exits": exits,
+            "objects": objects  
         }
 
         conn.close()

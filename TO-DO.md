@@ -1,5 +1,5 @@
 # Propuestas para realizar:
-- Turnos de combate
+- ~~Turnos de combate~~
 - Objetos mirables en la room
 - Poder mirar a otros jugadores
 - Comandos en una room
