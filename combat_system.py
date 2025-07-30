@@ -37,6 +37,9 @@ class CombatSystem:
         self.mud.send_message(attacker_id, f"Has iniciado un combate contra {self.players[victim_id]['display_name']}.")
         self.mud.send_message(victim_id, f"{self.players[attacker_id]['display_name']} te ha atacado. ¡Prepárate para luchar!")
 
+        # Realizar el primer ataque instantáneamente
+        self.process_turn(attacker_id)
+
     def process_turns(self):
         for attacker_id, combat in list(self.active_combats.items()):
             if combat["timer"]:
