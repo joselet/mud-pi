@@ -1,9 +1,9 @@
 import time
-from mudserver import MudServer
-from player_manager import PlayerManager
-from room_manager import RoomManager
-from combat_system import CombatSystem
-from config import NIVEL_DISPLAY, NIVEL_COLOR, COMMAND_ALIASES
+from .mudserver import MudServer
+from .player_manager import PlayerManager
+from .room_manager import RoomManager
+from .combat_system import CombatSystem
+from .config import NIVEL_DISPLAY, NIVEL_COLOR, COMMAND_ALIASES
 
 
 class MudGame:

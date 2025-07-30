@@ -1,5 +1,5 @@
 import random
-from timer import Timer
+from .timer import Timer
 
 class CombatSystem:
     def __init__(self, players, mud):

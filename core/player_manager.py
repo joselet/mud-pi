@@ -1,6 +1,6 @@
 import sqlite3
 import random
-from config import NIVEL_DISPLAY, NIVEL_COLOR
+from .config import NIVEL_DISPLAY, NIVEL_COLOR
 
 class PlayerManager:
     def __init__(self, db_path):

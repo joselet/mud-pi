@@ -37,7 +37,7 @@ Running the Server
 
 ### On Windows
 
-Double click on `simplemud.py` - the file will be opened with the Python 
+Double click on `paranoia.py` - the file will be opened with the Python 
 interpreter. To stop the server, simply close the terminal window.
 
 
@@ -45,7 +45,7 @@ interpreter. To stop the server, simply close the terminal window.
 
 From the terminal, change to the directory containing the script and run 
 
-	python simplemud.py
+	python paranoia.py
 	
 Note, if you are connected to the machine via SSH, you will find that the 
 script stops running when you quit the SSH session. A simple way to leave the 

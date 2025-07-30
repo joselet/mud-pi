@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from mud_game import MudGame
+from core.mud_game import MudGame
 
 DB_PATH = "data/mud.db"
 
