@@ -66,17 +66,25 @@ class CombatSystem:
             self.mud.send_message(victim_id, f"{attacker['display_name']} Realiza un penoso gesto de ataque, pero agotado desfallece en el intento.")
             combat["turn"] = victim_id
         else:
-            roll = random.randint(0, 5)
-            damage = max(0, attacker["f"] + roll - victim["r"])
-            victim["pv"] -= damage
-            attacker["e"] -= 1
+            # decidir si reducir la energia aquí o solo cuando se aseseta el golpe
+            # attacker["e"] -= 1 # Reduce la energía del atacante
+            rolla = random.randint(0, 5)
+            rollv = random.randint(0, 5)
+            chance = attacker["d"] + rolla - victim["a"] - rollv # Determina si el ataque tiene éxito (destreza del atacante + tirada - agilidad del defensor)
+            if chance < 0:
+                self.mud.send_message(attacker_id, f"Tirada: {attacker['d']} (Dest.A) + {rolla} - {victim['a']} (Agil.V) + {rollv} = {chance} -> Tu ataque ha fallado contra {victim['display_name']}.")
+                self.mud.send_message(victim_id, f"Tirada: {attacker['d']} (Dest.A) + {rolla} - {victim['a']} (Agil.V) + {rollv} = {chance} -> Has esquivado el ataque de {attacker['display_name']}.")
+            else:
+                roll = random.randint(0, 5)
+                damage = max(0, attacker["f"] + roll - victim["r"])
+                victim["pv"] -= damage
+                attacker["e"] -= 1  # Reduce la energía del atacante
+                self.mud.send_message(attacker_id, f"Tirada: {attacker['f']} (Fue.A) + {roll} - {victim['r']} (Res.V) = {damage} -> Has infligido {damage} de daño a {victim['display_name']}.")
+                self.mud.send_message(victim_id, f"Tirada: {attacker['f']} (Fue.A) + {roll} - {victim['r']} (Res.V) = {damage} -> Has recibido {damage} de daño de {attacker['display_name']}. Puntos de vida restantes: {victim['pv']}")
 
-            self.mud.send_message(attacker_id, f"Tirada: {attacker['f']} (Fue.A) + {roll} - {victim['r']} (Res.R) = {damage} -> Has infligido {damage} de daño a {victim['display_name']}.")
-            self.mud.send_message(victim_id, f"Tirada: {attacker['f']} (Fue.A) + {roll} - {victim['r']} (Res.R) = {damage} -> Has recibido {damage} de daño de {attacker['display_name']}. Puntos de vida restantes: {victim['pv']}")
-
-            if victim["pv"] <= 0:
-                self.end_combat(attacker_id, victim_id)
-                return
+                if victim["pv"] <= 0:
+                    self.end_combat(attacker_id, victim_id)
+                    return
 
         combat["turn"] = victim_id
         if self.active_combats[victim_id]:
