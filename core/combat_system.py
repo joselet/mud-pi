@@ -67,12 +67,12 @@ class CombatSystem:
             combat["turn"] = victim_id
         else:
             roll = random.randint(0, 5)
-            damage = max(0, attacker["f"] + roll - victim["d"])
+            damage = max(0, attacker["f"] + roll - victim["r"])
             victim["pv"] -= damage
             attacker["e"] -= 1
 
-            self.mud.send_message(attacker_id, f"Tirada: {attacker['f']} (Fue.A) + {roll} - {victim['d']} (Des.D) = {damage} -> Has infligido {damage} de daño a {victim['display_name']}.")
-            self.mud.send_message(victim_id, f"Tirada: {attacker['f']} (Fue.A) + {roll} - {victim['d']} (Des.D) = {damage} -> Has recibido {damage} de daño de {attacker['display_name']}. Puntos de vida restantes: {victim['pv']}")
+            self.mud.send_message(attacker_id, f"Tirada: {attacker['f']} (Fue.A) + {roll} - {victim['r']} (Res.R) = {damage} -> Has infligido {damage} de daño a {victim['display_name']}.")
+            self.mud.send_message(victim_id, f"Tirada: {attacker['f']} (Fue.A) + {roll} - {victim['r']} (Res.R) = {damage} -> Has recibido {damage} de daño de {attacker['display_name']}. Puntos de vida restantes: {victim['pv']}")
 
             if victim["pv"] <= 0:
                 self.end_combat(attacker_id, victim_id)
@@ -82,21 +82,21 @@ class CombatSystem:
         if self.active_combats[victim_id]:
             self.active_combats[victim_id]["timer"] = Timer(2, lambda: self.process_turn(victim_id))
 
-        if victim["e"] > 0:
-            response_roll = random.randint(0, 5)
-            response_damage = max(0, victim["f"] + response_roll - attacker["d"])
-            attacker["pv"] -= response_damage
-            victim["e"] -= 1
+        # if victim["e"] > 0:
+        #     response_roll = random.randint(0, 5)
+        #     response_damage = max(0, victim["f"] + response_roll - attacker["r"])
+        #     attacker["pv"] -= response_damage
+        #     victim["e"] -= 1
 
-            self.mud.send_message(victim_id, f"Tirada: {victim['f']} (Fue.V) + {response_roll} - {attacker['d']} (Des.A) = {response_damage} -> En respuesta, Has infligido {response_damage} de daño a {attacker['display_name']}.")
-            self.mud.send_message(attacker_id, f"Tirada: {victim['f']} (Fue.V) + {response_roll} - {attacker['d']} (Des.A) = {response_damage} -> En respuesta, Has recibido {response_damage} de daño de {victim['display_name']}. Puntos de vida restantes: {attacker['pv']}")
+        #     self.mud.send_message(victim_id, f"Tirada: {victim['f']} (Fue.V) + {response_roll} - {attacker['r']} (Res.A) = {response_damage} -> En respuesta, Has infligido {response_damage} de daño a {attacker['display_name']}.")
+        #     self.mud.send_message(attacker_id, f"Tirada: {victim['f']} (Fue.V) + {response_roll} - {attacker['r']} (Res.A) = {response_damage} -> En respuesta, Has recibido {response_damage} de daño de {victim['display_name']}. Puntos de vida restantes: {attacker['pv']}")
 
-            if attacker["pv"] <= 0:
-                self.end_combat(victim_id, attacker_id)
-                return
-        else:
-            self.mud.send_message(victim_id, "No tienes suficiente energía para contraatacar.")
-            self.mud.send_message(attacker_id, f"{victim['display_name']} Realiza un penoso gesto de ataque, pero agotado desfallece en el intento.")
+        #     if attacker["pv"] <= 0:
+        #         self.end_combat(victim_id, attacker_id)
+        #         return
+        # else:
+        #     self.mud.send_message(victim_id, "No tienes suficiente energía para contraatacar.")
+        #     self.mud.send_message(attacker_id, f"{victim['display_name']} Realiza un penoso gesto de ataque, pero agotado desfallece en el intento.")
 
         combat["timer"] = None
 
@@ -106,7 +106,7 @@ class CombatSystem:
 
         self.mud.send_message(winner_id, f"\033[93m¡Has derrotado a {self.players[loser_id]['display_name']}!\033[0m")
         self.mud.send_message(loser_id, f"\033[31m¡Has sido derrotado por {self.players[winner_id]['display_name']}!\033[0m")
-        self.mud.send_message(loser_id, "\033[93mTu cuerpo es reciclado y regenerado en la incubadora.\033[0m")
+        self.mud.send_message(loser_id, f"\033[93mDebido a tu pobre genética, las celulas de tu cuerpo se deshacen lentamente debido a la falta de irrigación mantenida por tu bomba de fluido sanguíneo.\nPor imperativa del ordenador, los restos de tu triste cuerpo son trasladados a la planta de regeneración para ser reciclados y finalmene formar una nueva vida.\nTu alma y tu psique es transferida a un nuevo cuerpo.\033[0m")
 
         for pid, pl in self.players.items():
             if pid != loser_id:
