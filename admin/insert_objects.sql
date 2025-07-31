@@ -8,6 +8,7 @@ CREATE TABLE room_objects (
 
 -- Ejemplo de inserción de objetos
 INSERT INTO room_objects (room_name, object_name, description) VALUES
+('inicio', 'tubo,tubos', 'Un montón de tubos de ensallo y probetas de diferentes colores y tamaños. Sientes cierta tentación de "beber probeta".'),
 ('lab/p3_pasillo_genetico', 'fuente', 'Una fuente de la que brota un montón de bebida espumosa.'),
 ('lab/p3_pasillo_genetico', 'camilla,camillas,cuerpo,cuerpos', 'Varias camillas de hospital con cuerpos inertes cubiertos por una sábana, algunas con manchas de sangre. Dudas si quieres ´destapar camilla´ Te aterroriza ver lo que oculta la sábana.'),
 ('lab/camara_criogenica', 'armario', 'Un armario metálico con puertas cerradas herméticamente. En una de las puertas ves una pegatina advirtiendo de un posible peligro.');
@@ -26,6 +27,7 @@ CREATE TABLE object_interactions (
 
 -- Ejemplo de inserción de interacciones
 INSERT INTO object_interactions (object_name, room_name, command, effect, message, cooldown, cooldown_message) VALUES
+('probeta', 'inicio', 'beber', 'vida-10', 'Engulles el contenido de la probeta y sientes un terrible ardor en el esófago', 30, 'Se te quitan las ganas de probar a beber una de esas cosas experimentales'),
 ('fuente', 'lab/p3_pasillo_genetico', 'beber', 'energia+5', 'La fuente burbujea suavemente mientras bebes de ella. Sientes un ligero cosquilleo en tu cuerpo.', 30, 'Bebes de la fuente, te notas algo empachad@. (vuelve a beber en % segundos)'),
 ('fuente', 'lab/p3_pasillo_genetico', 'romper', NULL, 'Desistes en tu intento de estropear la fuente', 0, NULL),
 ('camilla', 'lab/p3_pasillo_genetico', 'destapar', NULL, 'Aterrorizad@, caes al suelo', 10, 'Por experiencia, no deseas presenciar lo que hace un momento se ha visto bajo la sábana'),

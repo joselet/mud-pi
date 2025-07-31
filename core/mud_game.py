@@ -1,4 +1,5 @@
 import time
+import re # For regex operations (en efectos de objetos, para buscar el operador)
 from .mudserver import MudServer
 from .player_manager import PlayerManager
 from .room_manager import RoomManager
@@ -178,7 +179,7 @@ class MudGame:
                         room = self.room_manager.load_room(self.players[id]["room"])
                         if params:  # Si hay parámetros, como "beber fuente"
                             obj_name = params.lower()
-                            if obj_name in room["objects"]:
+                            if obj_name in room["objects"]: 
                                 obj = room["objects"][obj_name]
                                 if command in obj["interactions"]:  # Verificar si el comando está asociado al objeto
                                     interaction = obj["interactions"][command]
@@ -203,12 +204,44 @@ class MudGame:
                                         # Procesar el efecto de la interacción
                                         effect = interaction["effect"]
                                         if effect:
-                                            key, value = effect.split("+")
-                                            value = int(value)
-                                            if key == "energia":
-                                                self.players[id]["e"] = min(self.players[id].get("e", 0) + value, 100)  # Máximo 100 de energía
-                                                self.mud.send_message(id, f"Recuperas {value} puntos de energía.")
-                                            # Añadir otros posibles efectos aquí
+                                            print(f"[LOG] (pid= {id}) Ejecutando efecto '{effect}' en el jugador con '{obj_name}' y comando '{command}'")  # Debug output
+                                            # Detectar el operador y dividir la clave y el valor
+                                            match = re.match(r"(\w+)([+\-=])(\d+)", effect)
+                                            if match:
+                                                key, operator, value = match.groups()
+                                                value = int(value)
+
+                                                if key == "energia":
+                                                    if operator == "+":
+                                                        self.players[id]["e"] = min(self.players[id].get("e", 0) + value, 100)  # Máximo 100 de energía
+                                                        self.mud.send_message(id, f"Recuperas {value} puntos de energía.")
+                                                    elif operator == "-":
+                                                        self.players[id]["e"] = max(self.players[id].get("e", 0) - value, 0)  # Mínimo 0 de energía
+                                                        self.mud.send_message(id, f"Pierdes {value} puntos de energía.")
+                                                    elif operator == "=":
+                                                        self.players[id]["e"] = min(max(value, 0), 100)  # Ajustar entre 0 y 100
+                                                        self.mud.send_message(id, f"Tu energía se establece en {value}.")
+                                                # Añadir otros posibles efectos aquí
+                                                
+                                                else:
+                                                    self.mud.send_message(id, f"El efecto '{effect}' no está implementado.")
+                                            else:
+                                                self.mud.send_message(id, f"Formato de efecto inválido: '{effect}'.")
+                                        else:
+                                            self.mud.send_message(id, "No hay efecto asociado a esta interacción.")
+                                        #     print(f"[LOG] (pid= {id}) Ejecutando efecto '{effect}' para {obj_name} con comando '{command}'")  # Debug output
+                                        #     print(f"[LOG] effect.split(+): {effect.split("+")}")  # Debug output
+                                        #     key, value = effect.split("+") # si el efecto no coincide, devueve un error
+                                        #     value = int(value)
+                                        #     if key == "energia":
+                                        #         self.players[id]["e"] = min(self.players[id].get("e", 0) + value, 100)  # Máximo 100 de energía
+                                        #         self.mud.send_message(id, f"Recuperas {value} puntos de energía.")
+                                        #     # Añadir otros posibles efectos aquí
+                                        #     else:
+                                        #         self.mud.send_message(id, f"El efecto '{effect}' no está implementado.")
+                                        # else:
+                                        #     self.mud.send_message(id, "No hay efecto asociado a esta interacción.")
+
                                         # Enviar mensaje de interacción
                                         if interaction["message"]:
                                             self.mud.send_message(id, interaction["message"])
@@ -223,5 +256,6 @@ class MudGame:
                                 self.mud.send_message(id, f"No conozco la orden '{command}' (escribe: ayuda para ver los comandos disponibles).")
                     except ValueError as e:
                         self.mud.send_message(id, "\033[31mHas sufrido un fallo espacio/tiempo y apareces en la incubadora.\033[0m")
+                        print(f"[ERR] Fallo para (pid= {id}). Room: {self.players[id]["room"]} (Error: {e})")
                         self.players[id]["room"] = "respawn"
                         self.room_manager.show_room_to_player(id, self.players, self.mud)
