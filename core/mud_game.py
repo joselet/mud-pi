@@ -38,7 +38,10 @@ class MudGame:
             print(f"[LOG] (pid: {id}) {self.players[id]['name']} se desconectó de forma forzada.")
             for pid, pl in self.players.items():
                 if pid != id:
-                    self.mud.send_message(pid, f"{self.players[id]['display_name']} salió del juego.")
+                    if self.players[id]['name']:
+                        self.mud.send_message(pid, f"{self.players[id]['name']} salió del juego.")
+                    else:
+                        self.mud.send_message(pid, f"Jugador (id: {id}) salió del juego.")
             del self.players[id]
 
     def handle_commands(self):
@@ -87,9 +90,14 @@ class MudGame:
                     self.mud.send_message(id, f"Bienvenido al juego, {self.players[id]['display_name']}. Escribe 'ayuda' para obtener una lista de comandos.")
                     print(f"[LOG] (pid: {id}) {self.players[id]['name']} entró al juego.")
                     self.room_manager.show_room_to_player(id, self.players, self.mud)
+                    # notificar a otros jugadores
                     for pid, pl in self.players.items():
                         if pid != id:
                             self.mud.send_message(pid, f"[info] {self.players[id]['display_name']} entró al juego.")
+                    # notificar a los jugadores de la sala actual que acabas de aparecer en esta sala
+                    for pid, pl in self.players.items():
+                        if self.players[pid]["room"] == self.players[id]["room"] and pid != id:
+                            self.mud.send_message(pid, f"{self.players[id]['display_name']} acaba de aparecer aquí por arte de magia.")
                 except ValueError as e:
                     self.players[id]["password_attempts"] += 1
                     if self.players[id]["password_attempts"] >= 3:
@@ -119,12 +127,16 @@ class MudGame:
                     room = self.room_manager.load_room(self.players[id]["room"])
                     if params:  # Si se especifica un objeto
                         obj_name = params.lower()
-                        if obj_name in room["objects"]:
-                            obj = room["objects"][obj_name]
-                            self.mud.send_message(id, obj["description"])
+                        # Buscar si el objeto o alguno de sus alias está en la sala
+                        matching_object = next(
+                            (obj for alias, obj in room["objects"].items() if obj_name in alias.split(",")),
+                            None
+                        )
+                        if matching_object:
+                            self.mud.send_message(id, matching_object["description"])
                         else:
                             self.mud.send_message(id, f"No ves ningún '{obj_name}' aquí.")
-                    else: # Si no se especifica un objeto, mostrar la sala
+                    else:  # Si no se especifica un objeto, mostrar la sala
                         self.room_manager.show_room_to_player(id, self.players, self.mud)
                 elif command == "ir":
                     self.room_manager.move_player(id, params, self.players, self.mud)
@@ -143,7 +155,7 @@ class MudGame:
                 elif command == "estado":
                     ficha = self.players[id]
                     self.mud.send_message(id, (
-                        f"Eres {ficha['display_name']}, agente esclarecedor con Código de Seguridad:{NIVEL_COLOR.get(ficha.get('nivel', 0))} {NIVEL_DISPLAY.get(ficha.get('nivel', 0))} {NIVEL_COLOR.get('reset')} y clonado {ficha.get('clon', 1)} veces:\n"
+                        f"Eres {ficha['display_name']}, agente esclarecedor con Código de Seguridad: {NIVEL_COLOR.get(ficha.get('nivel', 0))}{NIVEL_DISPLAY.get(ficha.get('nivel', 0))}{NIVEL_COLOR.get('reset')} y clonado {ficha.get('clon', 1)} veces:\n"
                         f"Te han asignado al servicio: {ficha.get('servicio', 'Ninguno')}\n"
                         f"Perteneces a la sociedad secreta: {ficha.get('sociedad_secreta', 'Ninguna')}\n"
                         f"Vives en el sector: {ficha.get('sector', 'Desconocido')}\n"
@@ -170,18 +182,36 @@ class MudGame:
                                 obj = room["objects"][obj_name]
                                 if command in obj["interactions"]:  # Verificar si el comando está asociado al objeto
                                     interaction = obj["interactions"][command]
-                                    # Procesar el efecto de la interacción
-                                    effect = interaction["effect"]
-                                    if effect:
-                                        key, value = effect.split("+")
-                                        value = int(value)
-                                        if key == "energia":
-                                            self.players[id]["e"] = min(self.players[id].get("e", 0) + value, 100)  # Máximo 100 de energía
-                                            self.mud.send_message(id, f"Recuperas {value} puntos de energía.")
-                                        # Añadir otros posibles efectos aquí
-                                    # Enviar mensaje de interacción
-                                    if interaction["message"]:
-                                        self.mud.send_message(id, interaction["message"])
+                                    # Verificar si hay un cooldown
+                                    cooldown = interaction["cooldown"] 
+                                    last_used = self.players[id].get("last_used", {}).get(obj_name, {}).get(command, 0)
+                                    current_time = time.time()
+                                    if current_time - last_used < cooldown:
+                                        remain_time = int(cooldown - (current_time - last_used))
+                                        if interaction["cooldown_message"]:
+                                            self.mud.send_message(id, interaction["cooldown_message"].replace("%", str(remain_time)))
+                                        else:
+                                            self.mud.send_message(id, f"no puedes {command} en '{obj_name}' aún. Inténtalo en {remain_time} segundos.")
+                                    else:
+                                        # Registrar el último uso del comando para este objeto
+                                        if "last_used" not in self.players[id]:
+                                            self.players[id]["last_used"] = {}
+                                        if obj_name not in self.players[id]["last_used"]:
+                                            self.players[id]["last_used"][obj_name] = {}
+                                        self.players[id]["last_used"][obj_name][command] = current_time
+
+                                        # Procesar el efecto de la interacción
+                                        effect = interaction["effect"]
+                                        if effect:
+                                            key, value = effect.split("+")
+                                            value = int(value)
+                                            if key == "energia":
+                                                self.players[id]["e"] = min(self.players[id].get("e", 0) + value, 100)  # Máximo 100 de energía
+                                                self.mud.send_message(id, f"Recuperas {value} puntos de energía.")
+                                            # Añadir otros posibles efectos aquí
+                                        # Enviar mensaje de interacción
+                                        if interaction["message"]:
+                                            self.mud.send_message(id, interaction["message"])
                                 else:
                                     self.mud.send_message(id, f"No puedes '{command}' con {obj_name}.")
                             else:

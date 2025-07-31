@@ -29,20 +29,25 @@ class RoomManager:
         cur.execute("SELECT object_name, description FROM room_objects WHERE room_name = ?", (room_name.lower(),))
         objects = {}
         for row in cur.fetchall():
-            obj_name = row["object_name"]
-            objects[obj_name] = {
-                "description": row["description"],
-                "interactions": {}  # Aquí almacenaremos los comandos y efectos
-            }
+            # Dividir object_name en una lista de alias
+            aliases = row["object_name"].split(",")
+            for alias in aliases:
+                alias = alias.strip().lower()  # Normalizar los alias
+                objects[alias] = {
+                    "description": row["description"],
+                    "interactions": {}  # Aquí almacenaremos los comandos y efectos
+                }
 
         # Buscar las interacciones de los objetos
-        cur.execute("SELECT object_name, command, effect, message FROM object_interactions WHERE room_name = ?", (room_name.lower(),))
+        cur.execute("SELECT object_name, command, effect, message, cooldown, cooldown_message FROM object_interactions WHERE room_name = ?", (room_name.lower(),))
         for row in cur.fetchall():
             obj_name = row["object_name"]
             if obj_name in objects:
                 objects[obj_name]["interactions"][row["command"]] = {
                     "effect": row["effect"],
-                    "message": row["message"]
+                    "message": row["message"],
+                    "cooldown": row["cooldown"] or 0,  # Usa 0 si cooldown es None
+                    "cooldown_message": row["cooldown_message"]
                 }
 
         room_data = {
