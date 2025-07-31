@@ -17,6 +17,9 @@ COMMAND_ALIASES = {
     "quitar":"abandonar"
 }
 
+# Reversed dictionary for aliases (full name -> alias)
+REVERSED_COMMAND_ALIASES = {v: k for k, v in COMMAND_ALIASES.items()}
+
 # Descripción de los niveles: infrarojo, rojo, naranja, amarillo, verde, índigo, morado, ultravioleta, x
 NIVEL_DISPLAY = {
     0: "IR",
