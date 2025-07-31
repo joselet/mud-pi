@@ -10,7 +10,7 @@ INSERT INTO rooms (name, title, description) VALUES
 
 -- Insertar salidas
 INSERT INTO exits (room_name, exit_name, target_room) VALUES
-('inicio', 'fuera', 'lab/p3_pasillo_genetico'),
+('inicio', 'sur', 'lab/p3_pasillo_genetico'),
 
 ('lab/camara_criogenica', 'oeste', 'lab/planta2'),
 
