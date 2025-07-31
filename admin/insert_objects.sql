@@ -8,6 +8,7 @@ CREATE TABLE room_objects (
 
 -- Ejemplo de inserción de objetos
 INSERT INTO room_objects (room_name, object_name, description) VALUES
+('inicio', 'probeta', 'Una probeta de cristal llena de un líquido azulado semi-transparente. Parece que contiene algún tipo de sustancia química.'),
 ('inicio', 'tubo,tubos', 'Un montón de tubos de ensallo y probetas de diferentes colores y tamaños. Sientes cierta tentación de "beber probeta".'),
 ('lab/p3_pasillo_genetico', 'fuente', 'Una fuente de la que brota un montón de bebida espumosa.'),
 ('lab/p3_pasillo_genetico', 'camilla,camillas,cuerpo,cuerpos', 'Varias camillas de hospital con cuerpos inertes cubiertos por una sábana, algunas con manchas de sangre. Dudas si quieres ´destapar camilla´ Te aterroriza ver lo que oculta la sábana.'),
@@ -16,8 +17,8 @@ INSERT INTO room_objects (room_name, object_name, description) VALUES
 drop table if exists object_interactions;
 CREATE TABLE object_interactions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    object_name TEXT NOT NULL,
     room_name TEXT NOT NULL,
+    object_name TEXT NOT NULL,
     command TEXT NOT NULL,       -- Comando asociado (como "beber", "abrir")
     effect TEXT,
     message TEXT,                 -- Mensaje al ejecutar el comando (opcional)
@@ -26,9 +27,9 @@ CREATE TABLE object_interactions (
 );
 
 -- Ejemplo de inserción de interacciones
-INSERT INTO object_interactions (object_name, room_name, command, effect, message, cooldown, cooldown_message) VALUES
-('probeta', 'inicio', 'beber', 'vida-10', 'Engulles el contenido de la probeta y sientes un terrible ardor en el esófago', 30, 'Se te quitan las ganas de probar a beber una de esas cosas experimentales'),
-('fuente', 'lab/p3_pasillo_genetico', 'beber', 'energia+5', 'La fuente burbujea suavemente mientras bebes de ella. Sientes un ligero cosquilleo en tu cuerpo.', 30, 'Bebes de la fuente, te notas algo empachad@. (vuelve a beber en % segundos)'),
-('fuente', 'lab/p3_pasillo_genetico', 'romper', NULL, 'Desistes en tu intento de estropear la fuente', 0, NULL),
-('camilla', 'lab/p3_pasillo_genetico', 'destapar', NULL, 'Aterrorizad@, caes al suelo', 10, 'Por experiencia, no deseas presenciar lo que hace un momento se ha visto bajo la sábana'),
-('armario', 'lab/camara_criogenica', 'abrir', NULL, 'El armario está cerrado con llave.', NULL, NULL);
+INSERT INTO object_interactions (room_name, object_name, command, effect, message, cooldown, cooldown_message) VALUES
+('inicio', 'probeta', 'beber', 'vida-10', 'Engulles el contenido de la probeta y sientes un terrible ardor en el esófago', 30, 'Se te quitan las ganas de probar a beber una de esas cosas experimentales'),
+('lab/p3_pasillo_genetico', 'fuente', 'beber', 'energia+5', 'La fuente burbujea suavemente mientras bebes de ella. Sientes un ligero cosquilleo en tu cuerpo.', 30, 'Bebes de la fuente, te notas algo empachad@. (vuelve a beber en % segundos)'),
+('lab/p3_pasillo_genetico', 'fuente', 'romper', NULL, 'Desistes en tu intento de estropear la fuente', 0, NULL),
+('lab/p3_pasillo_genetico', 'camilla', 'destapar', NULL, 'Aterrorizad@, caes al suelo', 10, 'Por experiencia, no deseas presenciar lo que hace un momento se ha visto bajo la sábana'),
+('lab/camara_criogenica', 'armario', 'abrir', NULL, 'El armario está cerrado con llave.', NULL, NULL);

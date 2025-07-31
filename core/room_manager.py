@@ -51,6 +51,7 @@ class RoomManager:
                 }
 
         room_data = {
+            "name": room_row["name"],
             "title": room_row["title"],
             "description": room_row["description"],
             "exits": exits,
@@ -73,7 +74,7 @@ class RoomManager:
             room = self.load_room(players[id]["room"])
             mud.send_message(id, room["title"])
             mud.send_message(id, room["description"].replace("\\n", "\n"))
-            print(f"[LOG] (pid= {id}): {room['title']}")  # Debug output
+            print(f"[LOG] (pid= {id}): {room['name']}: {room['title']}")  # Debug output
             # Show other players in the room
             players_here = [pl["display_name"] for pid, pl in players.items() if players[pid]["room"] == players[id]["room"] and pid != id]
             if players_here:
