@@ -4,7 +4,7 @@ from .mudserver import MudServer
 from .player_manager import PlayerManager
 from .room_manager import RoomManager
 from .combat_system import CombatSystem
-from .config import NIVEL_DISPLAY, NIVEL_COLOR, COMMAND_ALIASES
+from .config import NIVEL_DISPLAY, NIVEL_COLOR, COMMAND_ALIASES, SERVICIOS
 from .room_command_processor import RoomCommandProcessor
 
 
@@ -119,7 +119,7 @@ class MudGame:
                     self.mud.send_message(id, "  decir <message>  - Decir algo en voz alta")
                     self.mud.send_message(id, "  mirar            - Examina tu alrededor")
                     self.mud.send_message(id, "  ir <exit>        - Mover hacia la salida especificada")
-                    self.mud.send_message(id, "  estado           - Comprobar la ficha y estado de tu personaje")
+                    self.mud.send_message(id, "  ficha            - Comprobar la ficha y estado de tu personaje")
                     self.mud.send_message(id, "  matar <objetivo> - Atacar a otro personaje")
                     self.mud.send_message(id, "  config           - configura algun aspecto del juego y tu personaje (en desarrollo)")
                     self.mud.send_message(id, "  abandonar        - Abandonar el juego")
@@ -162,26 +162,35 @@ class MudGame:
                     self.mud._handle_disconnect(id)
                     if id in self.players:
                         del self.players[id]
-                elif command == "estado":
+                elif command == "ficha":
                     ficha = self.players[id]
-                    self.mud.send_message(id, (
-                        f"Eres {ficha['display_name']}, agente esclarecedor con Código de Seguridad: {NIVEL_COLOR.get(ficha.get('nivel', 0))}{NIVEL_DISPLAY.get(ficha.get('nivel', 0))}{NIVEL_COLOR.get('reset')} y clonado {ficha.get('clon', 1)} veces:\n"
-                        f"Te han asignado al servicio: {ficha.get('servicio', 'Ninguno')}\n"
-                        f"Perteneces a la sociedad secreta: {ficha.get('sociedad_secreta', 'Ninguna')}\n"
-                        f"Vives en el sector: {ficha.get('sector', 'Desconocido')}\n"
-                        f"  {NIVEL_COLOR.get(8)}Puntos de TRAICIóN: {ficha.get('traicion', 0)}{NIVEL_COLOR.get('reset')}\n"
-                        f"  Vida (pv): {ficha.get('pv', 0)}\n"
-                        f"  Energía (e): {ficha.get('e', 0)}\n"
-                        f"  Fuerza (f): {ficha.get('f', 0)}\n"
-                        f"  Resistencia (r): {ficha.get('r', 0)}\n"
-                        f"  Agilidad (a): {ficha.get('a', 0)}\n"
-                        f"  Destreza (d): {ficha.get('d', 0)}\n"
-                        f"  Percepción (p): {ficha.get('p', 0)}\n"
-                        f"  Cinismo (c): {ficha.get('c', 0)}\n"
-                        f"  Talento mecánico (tm): {ficha.get('tm', 0)}\n"
-                        f"  Poder mutante (pm): {ficha.get('pm', 0)}\n"
-                        f"  Sala actual: {ficha.get('room', 'Desconocida')}"
-                    ))
+                    if params:
+                        if params.lower() == "servicio":
+                            self.mud.send_message(id, f"Información con nivel de seguridad ULTRAVIOLETA del servicio {ficha.get('servicio')}:\n"
+                                f"{SERVICIOS.get(ficha.get('servicio'), {}).get('titulo', 'No hay información disponible.')}\n"
+                                f"{SERVICIOS.get(ficha.get('servicio'), {}).get('descripcion', 'No hay información disponible.')}")
+                        else:
+                            self.mud.send_message(id, f"Que pretendes obtener con 'ficha {params.lower()}'? Extraer infomación no autorizada está penada por el Código Penal del Complejo Alfa. Si quieres ver tu ficha, escribe 'ficha' a secas.")  
+                    else:
+                        self.mud.send_message(id, (
+                            f"Eres {ficha['display_name']}, agente esclarecedor con Código de Seguridad: {NIVEL_COLOR.get(ficha.get('nivel', 0))}{NIVEL_DISPLAY.get(ficha.get('nivel', 0))}{NIVEL_COLOR.get('reset')} y clonado {ficha.get('clon', 1)} veces:\n"
+                            f"Te han asignado al servicio: {ficha.get('servicio', 'Ninguno')}\n"
+                            f"Perteneces a la sociedad secreta: {ficha.get('sociedad_secreta', 'Ninguna')}\n"
+                            f"Vives en el sector: {ficha.get('sector', 'Desconocido')}\n"
+                            f"  {NIVEL_COLOR.get(8)}Puntos de TRAICIóN: {ficha.get('traicion', 0)}{NIVEL_COLOR.get('reset')}\n"
+                            f"  Vida (pv): {ficha.get('pv', 0)}\n"
+                            f"  Energía (e): {ficha.get('e', 0)}\n"
+                            f"  Fuerza (f): {ficha.get('f', 0)}\n"
+                            f"  Resistencia (r): {ficha.get('r', 0)}\n"
+                            f"  Agilidad (a): {ficha.get('a', 0)}\n"
+                            f"  Destreza (d): {ficha.get('d', 0)}\n"
+                            f"  Percepción (p): {ficha.get('p', 0)}\n"
+                            f"  Cinismo (c): {ficha.get('c', 0)}\n"
+                            f"  Talento mecánico (tm): {ficha.get('tm', 0)}\n"
+                            f"  Poder mutante (pm): {ficha.get('pm', 0)}\n"
+                            f"  Sala actual: {ficha.get('room', 'Desconocida')}\n\n"
+                            f"Otros parámetros para 'ficha <parametro>': servicio"
+                        ))
                 elif command == "matar":
                     self.combat_system.start_combat(id, params)
                 elif command == "config":
@@ -219,66 +228,3 @@ class MudGame:
                         print(f"[ERR] Fallo para (pid= {id}). Comando: {command} (Error: {e})")
                         self.players[id]["room"] = "respawn"
                         self.room_manager.show_room_to_player(id, self.players, self.mud)
-                    #                 cooldown = interaction["cooldown"] 
-                    #                 last_used = self.players[id].get("last_used", {}).get(obj_name, {}).get(command, 0)
-                    #                 current_time = time.time()
-                    #                 if current_time - last_used < cooldown:
-                    #                     remain_time = int(cooldown - (current_time - last_used))
-                    #                     if interaction["cooldown_message"]:
-                    #                         self.mud.send_message(id, interaction["cooldown_message"].replace("%", str(remain_time)))
-                    #                     else:
-                    #                         self.mud.send_message(id, f"no puedes {command} en '{obj_name}' aún. Inténtalo en {remain_time} segundos.")
-                    #                 else:
-                    #                     # Registrar el último uso del comando para este objeto
-                    #                     if "last_used" not in self.players[id]:
-                    #                         self.players[id]["last_used"] = {}
-                    #                     if obj_name not in self.players[id]["last_used"]:
-                    #                         self.players[id]["last_used"][obj_name] = {}
-                    #                     self.players[id]["last_used"][obj_name][command] = current_time
-
-                    #                     # Procesar el efecto de la interacción
-                    #                     effect = interaction["effect"]
-                    #                     if effect:
-                    #                         print(f"[LOG] (pid= {id}) Ejecutando efecto '{effect}' en el jugador (objeto: '{obj_name}', comando: '{command}')")  # Debug output
-                    #                         # Detectar el operador y dividir la clave y el valor
-                    #                         match = re.match(r"(\w+)([+\-=])(\d+)", effect)
-                    #                         if match:
-                    #                             key, operator, value = match.groups()
-                    #                             value = int(value)
-
-                    #                             if key == "energia":
-                    #                                 if operator == "+":
-                    #                                     self.players[id]["e"] = min(self.players[id].get("e", 0) + value, 100)  # Máximo 100 de energía
-                    #                                     self.mud.send_message(id, f"[info] Recuperas {value} puntos de energía.")
-                    #                                 elif operator == "-":
-                    #                                     self.players[id]["e"] = max(self.players[id].get("e", 0) - value, 0)  # Mínimo 0 de energía
-                    #                                     self.mud.send_message(id, f"[info] Pierdes {value} puntos de energía.")
-                    #                                 elif operator == "=":
-                    #                                     self.players[id]["e"] = min(max(value, 0), 100)  # Ajustar entre 0 y 100
-                    #                                     self.mud.send_message(id, f"[info] Tu energía se establece en {value}.")
-                    #                             # Añadir otros posibles efectos aquí
-                                                
-                    #                             else:
-                    #                                 self.mud.send_message(id, f"[info] El efecto '{effect}' no está implementado.")
-                    #                         else:
-                    #                             self.mud.send_message(id, f"[info] Formato de efecto inválido: '{effect}'.")
-                    #                     else:
-                    #                         self.mud.send_message(id, "[info] No hay efecto asociado a esta interacción.")
-
-                    #                     # Enviar mensaje de interacción
-                    #                     if interaction["message"]:
-                    #                         self.mud.send_message(id, interaction["message"])
-                    #             else:
-                    #                 self.mud.send_message(id, f"No puedes '{command}' con {obj_name}.")
-                    #         else:
-                    #             self.mud.send_message(id, f"No ves ningún '{obj_name}' aquí.")
-                    #     else:  # Si no hay parámetros, procesar otros comandos dinámicos
-                    #         if command in room["exits"]:  # Si el comando es una salida
-                    #             self.room_manager.move_player(id, command, self.players, self.mud)
-                    #         else:
-                    #             self.mud.send_message(id, f"No conozco la orden '{command}' (escribe: ayuda para ver los comandos disponibles).")
-                    # except ValueError as e:
-                    #     self.mud.send_message(id, "\033[31mHas sufrido un fallo espacio/tiempo y apareces en la incubadora.\033[0m")
-                    #     print(f"[ERR] Fallo para (pid= {id}). Comando: {command} (Error: {e})")
-                    #     self.players[id]["room"] = "respawn"
-                    #     self.room_manager.show_room_to_player(id, self.players, self.mud)
