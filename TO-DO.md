@@ -5,6 +5,7 @@
 - ~~Comandos en una room~~
 - Coger objetos
 - Inventario
-- Usar objetos (bebidas: restablecer salud,energia)
+- ~~Usar objetos (bebidas: restablecer salud,energia)~~
 - NPC
 - comandos de generación de rooms para usuarios de nivel Ultravioleta (admin)
+- Puntos de traicion (en combate si victima.traicion > atacante.traicion atacante.traicion-- else atacante.traicion++)

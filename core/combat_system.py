@@ -71,9 +71,9 @@ class CombatSystem:
             rolla = random.randint(0, 5)
             rollv = random.randint(0, 5)
             chance = attacker["d"] + rolla - victim["a"] - rollv # Determina si el ataque tiene éxito (destreza del atacante + tirada - agilidad del defensor)
-            if self.players[attacker_id].get("config_tiradas", False):
+            if self.players[attacker_id]["config"].get("tiradas", False):
                 self.mud.send_message(attacker_id, f"[info] Tirada Dest vs Agil: {attacker['d']} (Dest.A) + {rolla} - {victim['a']} (Agil.V) + {rollv} = {chance} ")
-            if self.players[victim_id].get("config_tiradas", False):
+            if self.players[victim_id]["config"].get("tiradas", False):
                 self.mud.send_message(victim_id, f"[info] Tirada Dest vs Agil: {attacker['d']} (Dest.A) + {rolla} - {victim['a']} (Agil.V) + {rollv} = {chance}")
             if chance < 0:
                 # mensaje al atacante
@@ -86,11 +86,11 @@ class CombatSystem:
                 victim["pv"] -= damage
                 attacker["e"] -= 1  # Reduce la energía del atacante
                 # Mensaje de daño al atacante
-                if self.players[attacker_id].get("config_tiradas", False):
+                if self.players[attacker_id]["config"].get("tiradas", False):
                     self.mud.send_message(attacker_id, f"[info] Tirada daño: {attacker['f']} (Fue.A) + {roll} - {victim['r']} (Res.V) = {damage}")
                 self.mud.send_message(attacker_id, f"Has infligido {damage} de daño a {victim['display_name']}.")
                 # Mensaje de daño al defensor
-                if self.players[victim_id].get("config_tiradas", False):
+                if self.players[victim_id]["config"].get("tiradas", False):
                     self.mud.send_message(victim_id, f"[info] Tirada daño: {attacker['f']} (Fue.A) + {roll} - {victim['r']} (Res.V) = {damage}")
                 self.mud.send_message(victim_id, f"Has recibido {damage} de daño de {attacker['display_name']}. Puntos de vida restantes: {victim['pv']}")
 

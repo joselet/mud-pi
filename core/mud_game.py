@@ -169,6 +169,7 @@ class MudGame:
                         f"Te han asignado al servicio: {ficha.get('servicio', 'Ninguno')}\n"
                         f"Perteneces a la sociedad secreta: {ficha.get('sociedad_secreta', 'Ninguna')}\n"
                         f"Vives en el sector: {ficha.get('sector', 'Desconocido')}\n"
+                        f"  {NIVEL_COLOR.get(8)}Puntos de TRAICIóN: {ficha.get('traicion', 0)}{NIVEL_COLOR.get('reset')}\n"
                         f"  Vida (pv): {ficha.get('pv', 0)}\n"
                         f"  Energía (e): {ficha.get('e', 0)}\n"
                         f"  Fuerza (f): {ficha.get('f', 0)}\n"
@@ -185,22 +186,20 @@ class MudGame:
                     self.combat_system.start_combat(id, params)
                 elif command == "config":
                     if params:
-                        #self.mud.send_message(id, f"Comando '{params.lower()}' en desarrollo. ")
-                        # Procesar configuración de comando: config tiradas on/off
                         if params.lower() == "detallado off":
-                            self.players[id]["config_detallado"] = False
+                            self.players[id]["config"]["detallado"] = False
                             self.mud.send_message(id, "Modo detallado desactivado. Usa 'mirar' para ver el detalle de las rooms.")
                         elif params.lower() == "detallado on":
-                            self.players[id]["config_detallado"] = True
+                            self.players[id]["config"]["detallado"] = True
                             self.mud.send_message(id, "Modo detallado activado. Verás más detalles al entrar en un lugar.")
                         elif params.lower() == "tiradas off":
-                            self.players[id]["config_tiradas"] = False
+                            self.players[id]["config"]["tiradas"] = False
                             self.mud.send_message(id, "Visualización de tiradas de dados desactivada.")
                         elif params.lower() == "tiradas on":
-                            self.players[id]["config_tiradas"] = True
+                            self.players[id]["config"]["tiradas"] = True
                             self.mud.send_message(id, "Visualización de tiradas de dados activada.")
                         else:
-                            self.mud.send_message(id, f"Comando 'config {params.lower()}' no reconocido. teclea 'config' para ver la sintaxis.")
+                            self.mud.send_message(id, f"Comando 'config {params.lower()}' no reconocido. Teclea 'config' para ver la sintaxis.")
                     else:
                         self.mud.send_message(id, 
                             f"Ayuda del comando config:\n"
@@ -209,8 +208,8 @@ class MudGame:
                             "  - tiradas [on/off]: Activa o desactiva la visualización de las tiradas de dados\n"
                             "  - detallado [on/off]: Cambia el nivel de detalle de los lugares que visites (para ver el detalle siempre puedes 'mirar' el lugar)\n"
                             "Tu configuración actual:\n"
-                            f"  - tiradas: {'on' if self.players[id].get('config_tiradas', False) else 'off'}\n"
-                            f"  - detallado: {'on' if self.players[id].get('config_detallado', True) else 'off'}\n"
+                            f"  - tiradas: {'on' if self.players[id]['config'].get('tiradas', False) else 'off'}\n"
+                            f"  - detallado: {'on' if self.players[id]['config'].get('detallado', True) else 'off'}\n"
                         )
                 else:
                     try: ## procesar comandos dinámicos, salidas, alias y objetos e interacciones

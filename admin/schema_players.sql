@@ -17,5 +17,8 @@ CREATE TABLE IF NOT EXISTS players (
     servicio TEXT,
     sociedad_secreta TEXT,
     sector TEXT,
-    room TEXT DEFAULT 'inicio'
+    room TEXT DEFAULT 'inicio',
+    config TEXT ,
+    inventario TEXT ,
+    traicion INTEGER DEFAULT 0
 );

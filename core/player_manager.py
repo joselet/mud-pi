@@ -1,5 +1,6 @@
 import sqlite3
 import random
+import json
 from .config import NIVEL_DISPLAY, NIVEL_COLOR
 
 class PlayerManager:
@@ -19,7 +20,7 @@ class PlayerManager:
             pm = random.randint(1, 20)
             puntos = f + r + a + d + p + c + tm + pm
         ficha = {
-            "name": name,"password": password,"nivel": 0,"clon": 1,"pv": 100,"e": 100,"f": f,"r": r,"a": a,"d": d,"p": p,"c": c,"tm": tm,"pm": pm,"servicio": None,"sociedad_secreta": None,"sector": None,"room": "inicio"
+            "name": name,"password": password,"nivel": 0,"clon": 1,"pv": 100,"e": 100,"f": f,"r": r,"a": a,"d": d,"p": p,"c": c,"tm": tm,"pm": pm,"servicio": None,"sociedad_secreta": None,"sector": None,"room": "inicio","config": {},"inventario": {},"traicion": 0
         }
         # Servicio
         servicio_roll = random.randint(1, 20)
@@ -63,12 +64,13 @@ class PlayerManager:
         conn = sqlite3.connect(self.db_path)
         cur = conn.cursor()
         cur.execute("""
-            INSERT INTO players (name, password, nivel, clon, pv, e, f, r, a, d, p, c, tm, pm, servicio, sociedad_secreta, sector, room)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO players (name, password, nivel, clon, pv, e, f, r, a, d, p, c, tm, pm, servicio, sociedad_secreta, sector, room, config, inventario, traicion)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             ficha["name"], ficha["password"], ficha["nivel"], ficha["clon"], ficha["pv"], ficha["e"], ficha["f"], ficha["r"], ficha["a"],
             ficha["d"], ficha["p"], ficha["c"], ficha["tm"], ficha["pm"], ficha["servicio"],
-            ficha["sociedad_secreta"], ficha["sector"], ficha["room"]
+            ficha["sociedad_secreta"], ficha["sector"], ficha["room"],
+            json.dumps(ficha.get("config", {})), json.dumps(ficha.get("inventario", {})), ficha.get("traicion", 0)
         ))
         conn.commit()
         conn.close()
@@ -89,6 +91,8 @@ class PlayerManager:
             print(f"[WRN] Error loading player (name= {name}): Jugador no encontrado. Crear?")
             return None
         ficha = dict(row)
+        ficha["config"] = json.loads(ficha.get("config", "{}") or "{}")  # Manejar None o vacío
+        ficha["inventario"] = json.loads(ficha.get("inventario", "{}") or "{}")  # Manejar None o vacío
         if ficha.get("nivel") > 0:
             ficha["display_name"] = f"{NIVEL_COLOR.get(ficha.get('nivel', 0))}{ficha['name'].capitalize()}-{NIVEL_DISPLAY.get(ficha.get('nivel', 0))}-{ficha['sector']}-{ficha['clon']}{NIVEL_COLOR.get('reset')}"
         else:
@@ -103,11 +107,12 @@ class PlayerManager:
             cur.execute("""
                 UPDATE players SET
                     nivel = ?, clon = ?, pv = ?, e = ?, f = ?, r = ?, a = ?, d = ?, p = ?, c = ?, tm = ?, pm = ?,
-                    servicio = ?, sociedad_secreta = ?, sector = ?, room = ?
+                    servicio = ?, sociedad_secreta = ?, sector = ?, room = ?, config = ?, inventario = ?, traicion = ?
                 WHERE name = ?
             """, (
                 ficha.get("nivel", 0), ficha.get("clon", 1), ficha["pv"], ficha["e"], ficha["f"], ficha["r"], ficha["a"], ficha["d"],
-                ficha["p"], ficha["c"], ficha["tm"], ficha["pm"], ficha["servicio"], ficha["sociedad_secreta"], ficha.get("sector", None), ficha["room"], ficha["name"]
+                ficha["p"], ficha["c"], ficha["tm"], ficha["pm"], ficha["servicio"], ficha["sociedad_secreta"], ficha.get("sector", None), ficha["room"],
+                json.dumps(ficha.get("config", {})), json.dumps(ficha.get("inventario", {})), ficha.get("traicion", 0), ficha["name"]
             ))
             conn.commit()
             conn.close()
