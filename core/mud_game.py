@@ -142,12 +142,12 @@ class MudGame:
                             self.mud.send_message(id, f"No ves ningún '{obj_name}' aquí.")
                     else:  # Si no se especifica un objeto, mostrar la sala
                         # recuperar la configuración detallada del jugador
-                        config_detallado_actual = self.players[id].get("config_detallado", True)
+                        config_detallado_actual = self.players[id]["config"].get("detallado", True)
                         # forzar la visualización detallada
-                        self.players[id]["config_detallado"] = True
+                        self.players[id]["config"]["detallado"] = True
                         self.room_manager.show_room_to_player(id, self.players, self.mud)
                         # restaurar la configuración detallada del jugador
-                        self.players[id]["config_detallado"] = config_detallado_actual
+                        self.players[id]["config"]["detallado"] = config_detallado_actual
                 elif command == "ir":
                     self.room_manager.move_player(id, params, self.players, self.mud)
                 elif command == "abandonar":
