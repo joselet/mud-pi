@@ -166,9 +166,18 @@ class MudGame:
                     ficha = self.players[id]
                     if params:
                         if params.lower() == "servicio":
-                            self.mud.send_message(id, f"Información con nivel de seguridad ULTRAVIOLETA del servicio {ficha.get('servicio')}:\n"
-                                f"{SERVICIOS.get(ficha.get('servicio'), {}).get('titulo', 'No hay información disponible.')}\n"
-                                f"{SERVICIOS.get(ficha.get('servicio'), {}).get('descripcion', 'No hay información disponible.')}")
+                            if ficha.get("nivel", 0) < 1:
+                                self.mud.send_message(id, "No tienes acceso a información de servicios. Tu código de seguridad es demasiado bajo.")
+                                self.mud.send_message(id, f"Pretender obtener información por encima de tu CS está perseguido por '{NIVEL_COLOR.get(8)}el Ordenador{NIVEL_COLOR.get('reset')}'.")
+                                ficha["traicion"] += 1
+                                print(f"[LOG] Jugador (id= {id}) {ficha['name']} Intento de acceso a información de servicio sin autorización. Traición incrementada.")
+                                self.player_manager.save_player(ficha)
+                                self.mud.send_message(id, f"Tu nivel de traición ha aumentado a {ficha.get('traicion', 0)}. Si llegas a 10, serás vaporizado por orden del ordenador.")
+                            if ficha.get("nivel",0) > 0:
+                                self.mud.send_message(id, f"Acceso con CS '{NIVEL_COLOR.get(ficha.get('nivel', 0))}{NIVEL_DISPLAY.get(ficha.get('nivel', 0))}{NIVEL_COLOR.get('reset')}' a información del servicio {ficha.get('servicio')}:\n"
+                                    f"{SERVICIOS.get(ficha.get('servicio'), {}).get('titulo', 'No hay información disponible.')}")
+                            if ficha.get("nivel", 0) > 1:      
+                                self.mud.send_message(id,f"{SERVICIOS.get(ficha.get('servicio'), {}).get('descripcion', 'No hay información disponible.')}")
                         else:
                             self.mud.send_message(id, f"Que pretendes obtener con 'ficha {params.lower()}'? Extraer infomación no autorizada está penada por el Código Penal del Complejo Alfa. Si quieres ver tu ficha, escribe 'ficha' a secas.")  
                     else:
@@ -189,7 +198,7 @@ class MudGame:
                             f"  Talento mecánico (tm): {ficha.get('tm', 0)}\n"
                             f"  Poder mutante (pm): {ficha.get('pm', 0)}\n"
                             f"  Sala actual: {ficha.get('room', 'Desconocida')}\n\n"
-                            f"Otros parámetros para 'ficha <parametro>': servicio"
+                            f"Otros parámetros para 'ficha <parametro>': {NIVEL_COLOR.get(1)}servicio{NIVEL_COLOR.get('reset')}"
                         ))
                 elif command == "matar":
                     self.combat_system.start_combat(id, params)
