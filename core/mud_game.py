@@ -180,7 +180,8 @@ class MudGame:
                                 self.mud.send_message(id,
                                     f"Observas a {npc['display_name']}:\n"
                                     f"{npc['description']}\n"
-                                    f"{'Parece amigable.' if npc['can_talk'] else 'No parece amigable.'}"
+                                    f"{'Parece amigable.' if npc['can_talk'] else 'No parece amigable.'}\n"
+                                    f"Goza de {npc.get('pv', 0)} puntos de vida."
                                 )
                             else:
                                 # Si no se encuentra el objeto ni el NPC

@@ -78,7 +78,7 @@ class CombatSystem:
 
         victim_id = combat["victim"]
         attacker = self.players.get(attacker_id, None)
-        print (f"[LOG-debug] Process turn for attacker ID: {attacker_id}, Victim ID: {victim_id}")
+        # print (f"[LOG-debug] Process turn for attacker ID: {attacker_id}, Victim ID: {victim_id}")
         # Determinar si la víctima es un NPC (_npc0,_npc1,..) o un jugador (0,1,2,..)
         if str(victim_id).startswith("_npc"):
             victim_is_npc = True
@@ -139,6 +139,10 @@ class CombatSystem:
             roll = random.randint(0, 5)
             damage = max(0, attacker["f"] + roll - victim["r"])
             victim["pv"] -= damage
+            # guardar pv del atacante
+            if victim_is_npc:
+                # guardar los datos del npc en la base de datos
+                self.room_manager.save_npc(victim)
             #if not attacker_id.startswith("_npc"):
             attacker["e"] -= 1  # Reducir energía del atacante (~~solo jugadores~~ jugadores y npc)
 
@@ -158,9 +162,72 @@ class CombatSystem:
 
         # Cambiar el turno
         combat["turn"] = victim_id
-        if not victim_is_npc and self.active_combats[victim_id]:
+
+        if victim_is_npc:
+            # Si la víctima es un NPC, programa su turno para atacar al jugador
+            combat["timer"] = Timer(2, lambda: self.npc_attack(victim_id, attacker_id))
+        else:
+            # Si la víctima es un jugador, programa el turno del jugador
             self.active_combats[victim_id]["timer"] = Timer(2, lambda: self.process_turn(victim_id))
-        combat["timer"] = None
+            combat["timer"] = None
+
+
+
+
+
+
+    def npc_attack(self, npc_id, player_id):
+        # Cargar el NPC y el jugador
+        npc = next(
+            (npc for npc in self.room_manager.load_npcs_in_room(self.players[player_id]["room"]) if npc["id"] == npc_id),
+            None
+        )
+        player = self.players.get(player_id, None)
+
+        if not npc or not player:
+            # Si el NPC o el jugador ya no están disponibles, termina el combate
+            print(f"[LOG] NPC {npc_id} o jugador {player_id} no disponibles. Terminando combate.")
+            self.mud.send_message(player_id, f"El combate con {npc['display_name']} ha terminado. Has escapado como un cobarde!!")
+            del self.active_combats[player_id]
+            return
+
+        # Realizar la tirada de agilidad para determinar si el ataque tiene éxito
+        rolla = random.randint(0, 5)
+        rollv = random.randint(0, 5)
+        chance = npc["d"] + rolla - player["a"] - rollv
+
+        # Mensajes de tiradas si están activados
+        if player["config"].get("tiradas", False):
+            self.mud.send_message(player_id, f"[info] Tirada Dest vs Agil: {npc['d']} (Dest.NPC) + {rolla} - {player['a']} (Agil.J) + {rollv} = {chance}")
+
+        if chance < 0:
+            # El ataque del NPC falla
+            self.mud.send_message(player_id, f"¡Has esquivado el ataque de {npc['display_name']}!")
+        else:
+            # El ataque del NPC tiene éxito, calcular daño
+            roll = random.randint(0, 5)
+            damage = max(0, npc["f"] + roll - player["r"])
+            player["pv"] -= damage
+
+            # Mensajes de daño
+            self.mud.send_message(player_id, f"Has recibido {damage} de daño de {npc['display_name']}. Puntos de vida restantes: {player['pv']}")
+
+            # Verificar si el jugador ha muerto
+            if player["pv"] <= 0:
+                self.mud.send_message(player_id, f"¡Has sido derrotado por {npc['display_name']}!")
+                del self.active_combats[player_id]
+                return
+
+        # Cambiar el turno de vuelta al jugador
+        self.active_combats[player_id]["timer"] = Timer(2, lambda: self.process_turn(player_id))
+
+
+
+
+
+
+
+
 
     def end_combat(self, winner_id, loser_id):
         del self.active_combats[winner_id]

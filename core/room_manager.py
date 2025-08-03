@@ -149,3 +149,15 @@ class RoomManager:
             npc["id"] = f"_npc{npc["id"]}"
         conn.close()
         return npcs
+
+    def save_npc(self, npc):
+        npc_bd_id = npc["id"].replace("_npc", "")
+        conn = sqlite3.connect(self.db_path)
+        cur = conn.cursor()
+        # Actualizar el NPC en la base de datos
+        cur.execute("""
+            UPDATE npcs SET pv = ?, room = ?
+            WHERE id = ?
+        """,(npc["pv"], npc["room"], npc_bd_id))
+        conn.commit()
+        conn.close()
