@@ -1,10 +1,12 @@
 import random
 from .timer import Timer
+from .room_manager import RoomManager
 
 class CombatSystem:
-    def __init__(self, players, mud):
+    def __init__(self, players, mud, room_manager):
         self.players = players
         self.mud = mud
+        self.room_manager = room_manager
         self.active_combats = {}
 
     def start_combat(self, attacker_id, victim_name):
@@ -36,10 +38,33 @@ class CombatSystem:
 
         self.mud.send_message(attacker_id, f"Has iniciado un combate contra {self.players[victim_id]['display_name']}.")
         self.mud.send_message(victim_id, f"{self.players[attacker_id]['display_name']} te ha atacado. ¡Prepárate para luchar!")
+        #loguear
+        print(f"[LOG] (Ataque a jugadores) Attacker ID: {attacker_id}, Victim ID: {victim_id}")
+        # para qué esta info? print(f"[LOG]NPCs in room: {[npc['id'] for npc in self.room_manager.load_npcs_in_room(self.players[attacker_id]['room'])]}")
 
         # Realizar el primer ataque instantáneamente
         self.process_turn(attacker_id)
 
+
+    def start_combat_with_npc(self, player_id, npc):
+        if player_id in self.active_combats:
+            self.mud.send_message(player_id, "Ya estás en un combate.")
+            return
+
+        self.active_combats[player_id] = {
+            "victim": npc["id"],
+            "turn": player_id,
+            "timer": Timer(2, lambda: self.process_turn(player_id))
+        }
+        self.mud.send_message(player_id, f"Has iniciado un combate contra {npc['display_name']}.")
+        #loguear
+        print(f"[LOG] (Ataque a NPC) Attacker ID: {player_id}, NPC ID: {npc['id']}")
+        print(f"[LOG] NPCs in room: {[npc['id'] for npc in self.room_manager.load_npcs_in_room(self.players[player_id]['room'])]}")
+        self.process_turn(player_id)
+
+
+
+    # funcion llamada por mud_game. Quizas para gestionar si toca ya ejecutar un turno?
     def process_turns(self):
         for attacker_id, combat in list(self.active_combats.items()):
             if combat["timer"]:
@@ -48,76 +73,93 @@ class CombatSystem:
     def process_turn(self, attacker_id):
         combat = self.active_combats.get(attacker_id)
         if not combat:
+            print (f"[LOG-debug] No combat found for attacker ID: {attacker_id}")
             return
 
         victim_id = combat["victim"]
-        attacker = self.players[attacker_id]
-        victim = self.players[victim_id]
+        attacker = self.players.get(attacker_id, None)
+        print (f"[LOG-debug] Process turn for attacker ID: {attacker_id}, Victim ID: {victim_id}")
+        # Determinar si la víctima es un NPC (_npc0,_npc1,..) o un jugador (0,1,2,..)
+        if str(victim_id).startswith("_npc"):
+            victim_is_npc = True
+            victim = next(
+                (npc for npc in self.room_manager.load_npcs_in_room(attacker["room"]) if npc["id"] == victim_id),
+                None
+            )
+            if not victim:
+                # Si el NPC ya no está en la sala, termina el combate
+                self.mud.send_message(attacker_id, f"El combate con el NPC ha terminado porque ya no está en la sala.")
+                del self.active_combats[attacker_id]
+                return
+        else:
+            victim_is_npc = False
+            victim = self.players.get(victim_id, None)
+            if not victim:
+                # Si el jugador ya no está disponible, termina el combate
+                self.mud.send_message(attacker_id, f"El combate con el jugador ha terminado porque ya no está disponible.")
+                del self.active_combats[attacker_id]
+                return
 
+        # Verificar si están en la misma sala
         if attacker["room"] != victim["room"]:
             self.mud.send_message(attacker_id, f"El combate con {victim['display_name']} ha terminado porque ya no están en la misma sala.")
-            self.mud.send_message(victim_id, f"El combate con {attacker['display_name']} ha terminado porque ya no están en la misma sala.")
+            if not victim_is_npc:
+                self.mud.send_message(victim_id, f"El combate con {attacker['display_name']} ha terminado porque ya no están en la misma sala.")
             del self.active_combats[attacker_id]
-            del self.active_combats[victim_id]
+            if not victim_is_npc:
+                del self.active_combats[victim_id]
             return
 
+        # Verificar si el atacante tiene suficiente energía (solo jugadores)
         if attacker["e"] <= 0:
             self.mud.send_message(attacker_id, "No tienes suficiente energía para atacar.")
-            self.mud.send_message(victim_id, f"{attacker['display_name']} Realiza un penoso gesto de ataque, pero agotado desfallece en el intento.")
+            if not victim_is_npc:
+                self.mud.send_message(victim_id, f"{attacker['display_name']} intenta atacarte, pero está demasiado agotado.")
             combat["turn"] = victim_id
-        else:
-            # decidir si reducir la energia aquí o solo cuando se aseseta el golpe
-            # attacker["e"] -= 1 # Reduce la energía del atacante
-            rolla = random.randint(0, 5)
-            rollv = random.randint(0, 5)
-            chance = attacker["d"] + rolla - victim["a"] - rollv # Determina si el ataque tiene éxito (destreza del atacante + tirada - agilidad del defensor)
-            if self.players[attacker_id]["config"].get("tiradas", False):
-                self.mud.send_message(attacker_id, f"[info] Tirada Dest vs Agil: {attacker['d']} (Dest.A) + {rolla} - {victim['a']} (Agil.V) + {rollv} = {chance} ")
-            if self.players[victim_id]["config"].get("tiradas", False):
-                self.mud.send_message(victim_id, f"[info] Tirada Dest vs Agil: {attacker['d']} (Dest.A) + {rolla} - {victim['a']} (Agil.V) + {rollv} = {chance}")
-            if chance < 0:
-                # mensaje al atacante
-                self.mud.send_message(attacker_id, f"Tu ataque contra {victim['display_name']} ha fallado.")
-                # mensaje al defensor
+            return
+
+        # Realizar la tirada de agilidad para determinar si el ataque tiene éxito
+        rolla = random.randint(0, 5)
+        rollv = random.randint(0, 5)
+        chance = attacker["d"] + rolla - victim["a"] - rollv
+
+        # Mensajes de tiradas si están activados
+        if attacker_id in self.players and self.players[attacker_id]["config"].get("tiradas", False):
+            self.mud.send_message(attacker_id, f"[info] Tirada Dest vs Agil: {attacker['d']} (Dest.A) + {rolla} - {victim['a']} (Agil.V) + {rollv} = {chance}")
+        if not victim_is_npc and victim["config"].get("tiradas", False):
+            self.mud.send_message(victim_id, f"[info] Tirada Dest vs Agil: {attacker['d']} (Dest.A) + {rolla} - {victim['a']} (Agil.V) + {rollv} = {chance}")
+
+        if chance < 0:
+            # El ataque falla
+            self.mud.send_message(attacker_id, f"Tu ataque contra {victim['display_name']} ha fallado.")
+            if not victim_is_npc:
                 self.mud.send_message(victim_id, f"Has esquivado el ataque de {attacker['display_name']}.")
-            else:
-                roll = random.randint(0, 5)
-                damage = max(0, attacker["f"] + roll - victim["r"])
-                victim["pv"] -= damage
-                attacker["e"] -= 1  # Reduce la energía del atacante
-                # Mensaje de daño al atacante
-                if self.players[attacker_id]["config"].get("tiradas", False):
-                    self.mud.send_message(attacker_id, f"[info] Tirada daño: {attacker['f']} (Fue.A) + {roll} - {victim['r']} (Res.V) = {damage}")
-                self.mud.send_message(attacker_id, f"Has infligido {damage} de daño a {victim['display_name']}.")
-                # Mensaje de daño al defensor
-                if self.players[victim_id]["config"].get("tiradas", False):
-                    self.mud.send_message(victim_id, f"[info] Tirada daño: {attacker['f']} (Fue.A) + {roll} - {victim['r']} (Res.V) = {damage}")
+        else:
+            # El ataque tiene éxito, calcular daño
+            roll = random.randint(0, 5)
+            damage = max(0, attacker["f"] + roll - victim["r"])
+            victim["pv"] -= damage
+            #if not attacker_id.startswith("_npc"):
+            attacker["e"] -= 1  # Reducir energía del atacante (~~solo jugadores~~ jugadores y npc)
+
+            # Mensajes de daño
+            self.mud.send_message(attacker_id, f"Has infligido {damage} de daño a {victim['display_name']}.")
+            if not victim_is_npc:
                 self.mud.send_message(victim_id, f"Has recibido {damage} de daño de {attacker['display_name']}. Puntos de vida restantes: {victim['pv']}")
 
-                if victim["pv"] <= 0:
+            # Verificar si la víctima ha muerto
+            if victim["pv"] <= 0:
+                if victim_is_npc:
+                    self.mud.send_message(attacker_id, f"¡Has derrotado a {victim['display_name']}!")
+                    del self.active_combats[attacker_id]
+                else:
                     self.end_combat(attacker_id, victim_id)
-                    return
+                return
 
+        # Cambiar el turno
         combat["turn"] = victim_id
-        if self.active_combats[victim_id]:
+        if not victim_is_npc and self.active_combats[victim_id]:
             self.active_combats[victim_id]["timer"] = Timer(2, lambda: self.process_turn(victim_id))
-
-        # if victim["e"] > 0:
-        #     response_roll = random.randint(0, 5)
-        #     response_damage = max(0, victim["f"] + response_roll - attacker["r"])
-        #     attacker["pv"] -= response_damage
-        #     victim["e"] -= 1
-
-        #     self.mud.send_message(victim_id, f"Tirada: {victim['f']} (Fue.V) + {response_roll} - {attacker['r']} (Res.A) = {response_damage} -> En respuesta, Has infligido {response_damage} de daño a {attacker['display_name']}.")
-        #     self.mud.send_message(attacker_id, f"Tirada: {victim['f']} (Fue.V) + {response_roll} - {attacker['r']} (Res.A) = {response_damage} -> En respuesta, Has recibido {response_damage} de daño de {victim['display_name']}. Puntos de vida restantes: {attacker['pv']}")
-
-        #     if attacker["pv"] <= 0:
-        #         self.end_combat(victim_id, attacker_id)
-        #         return
-        # else:
-        #     self.mud.send_message(victim_id, "No tienes suficiente energía para contraatacar.")
-        #     self.mud.send_message(attacker_id, f"{victim['display_name']} Realiza un penoso gesto de ataque, pero agotado desfallece en el intento.")
-
         combat["timer"] = None
 
     def end_combat(self, winner_id, loser_id):

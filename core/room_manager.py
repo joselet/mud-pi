@@ -88,7 +88,13 @@ class RoomManager:
                 mud.send_message(id, f"Aquí ves a: {', '.join(players_here)}")
             else:
                 mud.send_message(id, "Estás solo aquí.")
-            
+    
+            # Mostrar NPCs en la sala
+            npcs = self.load_npcs_in_room(players[id]["room"])
+            if npcs:
+                npc_names = [npc["display_name"] for npc in npcs]
+                mud.send_message(id, f"Aquí ves a los siguientes NPCs: {', '.join(npc_names)}")
+
             # Show exits (detailed view)
             if players[id]["config"].get("detallado", True):
                 mud.send_message(id, f"Salidas: {', '.join(room['exits'])}")
@@ -130,3 +136,16 @@ class RoomManager:
             mud.send_message(id, "\033[31mHas sufrido un fallo espacio/tiempo y apareces en la incubadora.\033[0m")
             players[id]["room"] = "respawn"
             self.show_room_to_player(id, players, mud)
+
+
+    def load_npcs_in_room(self, room_name):
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM npcs WHERE room = ?", (room_name,))
+        npcs = [dict(row) for row in cur.fetchall()]
+        # asignar un id a cada NPC
+        for i, npc in enumerate(npcs):
+            npc["id"] = f"_npc{npc["id"]}"
+        conn.close()
+        return npcs

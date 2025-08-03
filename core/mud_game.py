@@ -1,4 +1,5 @@
 import time
+import json
 # import re # For regex operations (en efectos de objetos, para buscar el operador)
 from .mudserver import MudServer
 from .player_manager import PlayerManager
@@ -14,7 +15,7 @@ class MudGame:
         self.players = {}
         self.player_manager = PlayerManager(db_path)
         self.room_manager = RoomManager(db_path)
-        self.combat_system = CombatSystem(self.players, self.mud)
+        self.combat_system = CombatSystem(self.players, self.mud, self.room_manager)
         self.room_command_processor = RoomCommandProcessor(self.room_manager, self.players, self.mud)
 
     def run(self):
@@ -127,6 +128,34 @@ class MudGame:
                     for pid, pl in self.players.items():
                         if self.players[pid]["room"] == self.players[id]["room"]:
                             self.mud.send_message(pid, f"{self.players[id]['display_name']} dice: {params}")
+                
+                
+                # hablar con npc
+                elif command == "hablar":
+                    npc_name = params.strip().lower()
+                    room_npcs = self.room_manager.load_npcs_in_room(self.players[id]["room"])
+                    npc = next(
+                        (npc for npc in room_npcs if npc_name == npc["display_name"].lower() or npc_name in npc.get("alias", "").lower().split(",")),
+                        None
+                    )
+                    if npc and npc["can_talk"]:
+                        conversation = json.loads(npc["conversation"])
+                        self.mud.send_message(id, f"{npc['display_name']} dice: {conversation.get('greeting', 'Hola.')}")
+                    else:
+                        self.mud.send_message(id, f"No puedes hablar con '{npc_name}'.")
+
+#                elif command == "atacar": # solo para NPC. Jugadores es matar. Se fusionan las dos funciones
+#                    npc_name = params.strip().lower()
+#                    room_npcs = self.room_manager.load_npcs_in_room(self.players[id]["room"])
+#                    npc = next(
+#                        (npc for npc in room_npcs if npc_name == npc["display_name"].lower() or npc_name in npc.get("alias", "").lower().split(",")),
+#                        None
+#                    )
+#                    if npc and npc["can_fight"]:
+#                        self.combat_system.start_combat_with_npc(id, npc)
+#                    else:
+#                        mud.send_message(id, f"No puedes atacar a '{npc_name}'.")
+                
                 elif command == "mirar":
                     room = self.room_manager.load_room(self.players[id]["room"])
                     if params:  # Si se especifica un objeto
@@ -139,7 +168,23 @@ class MudGame:
                         if matching_object:
                             self.mud.send_message(id, matching_object["description"])
                         else:
-                            self.mud.send_message(id, f"No ves ningún '{obj_name}' aquí.")
+                            # comprobar si es un NPC
+                            # Si se especifica un NPC
+                            npc_name = params.lower()
+                            room_npcs = self.room_manager.load_npcs_in_room(self.players[id]["room"])
+                            npc = next(
+                                (npc for npc in room_npcs if npc_name == npc["display_name"].lower() or npc_name in npc.get("alias", "").lower().split(",")),
+                                None
+                            )
+                            if npc:
+                                self.mud.send_message(id,
+                                    f"Observas a {npc['display_name']}:\n"
+                                    f"{npc['description']}\n"
+                                    f"{'Parece amigable.' if npc['can_talk'] else 'No parece amigable.'}"
+                                )
+                            else:
+                                # Si no se encuentra el objeto ni el NPC
+                                self.mud.send_message(id, f"No ves nada llamado '{obj_name}' en este lugar.")
                     else:  # Si no se especifica un objeto, mostrar la sala
                         # recuperar la configuración detallada del jugador
                         config_detallado_actual = self.players[id]["config"].get("detallado", True)
@@ -201,7 +246,24 @@ class MudGame:
                             f"Otros parámetros para 'ficha <parametro>': {NIVEL_COLOR.get(1)}servicio{NIVEL_COLOR.get('reset')}"
                         ))
                 elif command == "matar":
-                    self.combat_system.start_combat(id, params)
+                    target_name = params.strip().lower()
+                    room_npcs = self.room_manager.load_npcs_in_room(self.players[id]["room"])
+                    npc = next(
+                        (npc for npc in room_npcs if target_name == npc["display_name"].lower() or target_name in npc.get("alias", "").lower().split(",")),
+                        None
+                    )
+                    if npc and npc["can_fight"]:
+                        self.combat_system.start_combat_with_npc(id, npc)
+                    elif npc:
+                        self.mud.send_message(id, f"Serías acusado de traición si atacas a '{npc['display_name']}'.")
+                    else:
+                        # atacar al jugador
+                        self.combat_system.start_combat(id, params)
+
+
+
+
+
                 elif command == "config":
                     if params:
                         if params.lower() == "detallado off":
