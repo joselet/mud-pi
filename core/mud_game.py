@@ -117,10 +117,11 @@ class MudGame:
 
                 if command == "ayuda":
                     self.mud.send_message(id, "Comandos básicos:")
-                    self.mud.send_message(id, "  decir <message>  - Decir algo en voz alta")
-                    self.mud.send_message(id, "  mirar            - Examina tu alrededor")
+                    self.mud.send_message(id, "  mirar <objeto>   - Examina tu alrededor. Si especificas un objeto o personaje, lo examina en detalle.")
                     self.mud.send_message(id, "  ir <exit>        - Mover hacia la salida especificada")
                     self.mud.send_message(id, "  ficha            - Comprobar la ficha y estado de tu personaje")
+                    self.mud.send_message(id, "  decir <message>  - Decir algo en voz alta")
+                    self.mud.send_message(id, "  hablar <arg>     - iniciar una conversación con un NPC")
                     self.mud.send_message(id, "  matar <objetivo> - Atacar a otro personaje")
                     self.mud.send_message(id, "  config           - configura algun aspecto del juego y tu personaje (en desarrollo)")
                     self.mud.send_message(id, "  abandonar        - Abandonar el juego")

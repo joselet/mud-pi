@@ -156,6 +156,11 @@ class CombatSystem:
                 if victim_is_npc:
                     self.mud.send_message(attacker_id, f"¡Has derrotado a {victim['display_name']}!")
                     del self.active_combats[attacker_id]
+                    # Mensaje de muerte del NPC
+                    self.mud.send_message(attacker_id, victim['dead_message'].replace('\\n', '\n'))
+                    # Programar respawn del NPC
+                    from .npc_manager import schedule_npc_respawn
+                    schedule_npc_respawn(victim, self.room_manager, self.players, self.mud)
                 else:
                     self.end_combat(attacker_id, victim_id)
                 return
@@ -187,7 +192,8 @@ class CombatSystem:
         if not npc or not player:
             # Si el NPC o el jugador ya no están disponibles, termina el combate
             print(f"[LOG] NPC {npc_id} o jugador {player_id} no disponibles. Terminando combate.")
-            self.mud.send_message(player_id, f"El combate con {npc['display_name']} ha terminado. Has escapado como un cobarde!!")
+            # ***** self.mud.send_message(player_id, f"El combate con {npc_id} ha terminado. Has escapado como un cobarde!!")
+            self.mud.send_message(player_id, f"El combate ha terminado. Has escapado como un cobarde!!")
             del self.active_combats[player_id]
             return
 
@@ -215,7 +221,7 @@ class CombatSystem:
             # Verificar si el jugador ha muerto
             if player["pv"] <= 0:
                 self.mud.send_message(player_id, f"¡Has sido derrotado por {npc['display_name']}!")
-                del self.active_combats[player_id]
+                self.end_combat_npc(npc['display_name'], player_id)
                 return
 
         # Cambiar el turno de vuelta al jugador
@@ -226,7 +232,21 @@ class CombatSystem:
 
 
 
+# *** intentar fusionar esta funcion con end_combat
+    def end_combat_npc(self, npc_display_name, loser_id):
+        del self.active_combats[loser_id]
+        
+        self.mud.send_message(loser_id, f"\033[31m¡Has sido derrotado por {npc_display_name}!\033[0m")
+        self.mud.send_message(loser_id, f"\033[93mDebido a tu pobre genética, las celulas de tu cuerpo se deshacen lentamente debido a la falta de irrigación mantenida por tu bomba de fluido sanguíneo.\nPor imperativa del ordenador, los restos de tu triste cuerpo son trasladados a la planta de regeneración para ser reciclados y finalmene formar una nueva vida.\nTu alma y tu psique es transferida a un nuevo cuerpo.\033[0m")
 
+        for pid, pl in self.players.items():
+            if pid != loser_id:
+                self.mud.send_message(pid, f"[info] {self.players[loser_id]['name']} ha muerto.")
+
+        self.players[loser_id]["room"] = "respawn"
+        self.players[loser_id]["clon"] += 1
+        self.players[loser_id]["display_name"] = f"{self.players[loser_id]['name'].capitalize()}-{self.players[loser_id]['sector']}-{self.players[loser_id]['clon']}"
+        self.players[loser_id]["pv"] = 25
 
 
     def end_combat(self, winner_id, loser_id):

@@ -6,6 +6,12 @@ class RoomManager:
         self.db_path = db_path
         self.rooms_cache = {}
 
+    def players_in_room(self, room_name, players):
+        """
+        Devuelve una lista de IDs de jugadores presentes en una sala específica.
+        """
+        return [pid for pid, pl in players.items() if pl["room"] == room_name]
+
     def load_room(self, room_name):
         # Si la sala ya está en la caché, devolverla
         if room_name in self.rooms_cache:
@@ -142,11 +148,12 @@ class RoomManager:
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
-        cur.execute("SELECT * FROM npcs WHERE room = ?", (room_name,))
+        cur.execute("SELECT * FROM npcs WHERE room = ? AND pv > 0", (room_name,))  # Filtrar NPCs con pv > 0
         npcs = [dict(row) for row in cur.fetchall()]
         # asignar un id a cada NPC
         for i, npc in enumerate(npcs):
-            npc["id"] = f"_npc{npc["id"]}"
+            npc["id"] = f"_npc{npc['id']}"
+            npc["description"] = npc["description"].replace("\\033[", "\033[")  # Normalizar la descripción por si hubieran colores
         conn.close()
         return npcs
 
