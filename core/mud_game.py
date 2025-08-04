@@ -159,7 +159,7 @@ class MudGame:
                                 else:
                                     self.mud.send_message(id, f"{npc['display_name']} no tiene nada que decir sobre '{topic}'.")
                             else:
-                                self.mud.send_message(id, f"No puedes hablar sobre '{topic}' todavía.")
+                                self.mud.send_message(id, f"No hay nada que decir de '{topic}' todavía.")
                     else:
                         self.mud.send_message(id, f"No puedes hablar con '{npc_name}'.")
                 
