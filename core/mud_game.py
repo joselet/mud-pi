@@ -132,17 +132,47 @@ class MudGame:
 
                 # hablar con npc
                 elif command == "hablar":
-                    npc_name = params.strip().lower()
+                    npc_name = params.strip().split(" ", 1)[0].lower()
+                    topic = params.strip().split(" ", 1)[1].lower() if " " in params.strip() else None
+
                     room_npcs = self.room_manager.load_npcs_in_room(self.players[id]["room"])
                     npc = next(
                         (npc for npc in room_npcs if npc_name == npc["display_name"].lower() or npc_name in npc.get("alias", "").lower().split(",")),
                         None
                     )
+
                     if npc and npc["can_talk"]:
                         conversation = json.loads(npc["conversation"])
-                        self.mud.send_message(id, f"{npc['display_name']} dice: {conversation.get('greeting', 'Hola.')}")
+                        if not topic:  # Si no se especifica un tema, mostrar el saludo inicial
+                            self.mud.send_message(id, f"{npc['display_name']} dice: {conversation.get('greeting', 'Hola.')}")
+                            self.players[id].setdefault("unlocked_topics", {}).setdefault(npc_name, [])
+                        else:
+                            unlocked_topics = self.players[id].get("unlocked_topics", {}).get(npc_name, [])
+                            if topic in unlocked_topics or topic in conversation["topics"]:
+                                topic_data = conversation["topics"].get(topic)
+                                if topic_data:
+                                    self.mud.send_message(id, f"{npc['display_name']} dice: {topic_data['response']}")
+                                    # Desbloquear nuevos temas
+                                    unlocked_topics.extend(topic_data.get("unlock", []))
+                                    self.players[id]["unlocked_topics"][npc_name] = list(set(unlocked_topics))
+                                else:
+                                    self.mud.send_message(id, f"{npc['display_name']} no tiene nada que decir sobre '{topic}'.")
+                            else:
+                                self.mud.send_message(id, f"No puedes hablar sobre '{topic}' todavía.")
                     else:
                         self.mud.send_message(id, f"No puedes hablar con '{npc_name}'.")
+                # elif command == "hablar":
+                #     npc_name = params.strip().lower()
+                #     room_npcs = self.room_manager.load_npcs_in_room(self.players[id]["room"])
+                #     npc = next(
+                #         (npc for npc in room_npcs if npc_name == npc["display_name"].lower() or npc_name in npc.get("alias", "").lower().split(",")),
+                #         None
+                #     )
+                #     if npc and npc["can_talk"]:
+                #         conversation = json.loads(npc["conversation"])
+                #         self.mud.send_message(id, f"{npc['display_name']} dice: {conversation.get('greeting', 'Hola.')}")
+                #     else:
+                #         self.mud.send_message(id, f"No puedes hablar con '{npc_name}'.")
                 
                 elif command == "mirar":
                     room = self.room_manager.load_room(self.players[id]["room"])

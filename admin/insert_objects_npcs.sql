@@ -60,5 +60,27 @@ CREATE TABLE IF NOT EXISTS npcs (
 );
 
 INSERT INTO npcs (display_name, alias, room, can_talk, can_fight, description, conversation, pv, pv_max, f, r, a, d, dead_message, dead_effect, dead_effect_message, respawn_time) VALUES
-('Guardia-robot', 'guardia,robot', 'inicio', 1, 1, 'Un androide de aspecto bastante humanizado. Está pintado en color blanco metalizado. En su pecho lleva imprimida una inscripción: \033[91mGua-R-DIA-P3-1\033[0m. No parece ir armado.','{"greeting": "¡Detente ahí, ciudadano!"}', 100, 100, 15, 10, 8, 12, 'El guardia-robot colapsa en un montón de chispas.\nUn sonido de alarma retumba en toda la sala. La voz del ordenador se escucha por todos los altavoces de la zona.\nAtención: Se ha producido una grave traición en el sector del laboratorio genético. Envien rápidamente un Guardia-robot de reconocimiento y establezcan un perímetro de seguridad.', 'traicion+1', 'El ordenador ha detectado tu traición. Has perdido algo de confianza (traicion + 1)', 60),
-('Cient-I-FICO', 'cientifico', 'inicio', 1, 0, 'Un científico de pelo alborotado y gafas de pasta con mucho aumento. Lleva puesta una bata blanca.','{"greeting": "Estoy ocupado, no molestes."}', 50, 50, 5, 5, 5, 5, 'El científico cae al suelo, inerte.', NULL, NULL, 3600);
+('Guardia-robot', 'guardia,robot', 'inicio', 1, 1, 'Un androide de aspecto bastante humanizado. Está pintado en color blanco metalizado. En su pecho lleva imprimida una inscripción: \033[91mGua-R-DIA-P3-1\033[0m. No parece ir armado.','{"greeting": "¡Detente ahí, ciudadano!"}', 100, 100, 15, 10, 8, 12, 'El guardia-robot colapsa en un montón de chispas.\nUn sonido de alarma retumba en toda la sala. La voz del ordenador se escucha por todos los altavoces de la zona.\nAtención: Se ha producido una grave traición en el sector del laboratorio genético. Envien rápidamente un Guardia-robot de reconocimiento y establezcan un perímetro de seguridad.', 'traicion+1', 'El ordenador ha detectado tu traición. Has perdido algo de confianza (traicion + 1)', 60);
+INSERT INTO npcs (display_name, alias, room, can_talk, can_fight, description, conversation, pv, pv_max, f, r, a, d, dead_message, dead_effect, dead_effect_message, respawn_time) VALUES
+('Cient-I-FICO', 'cientifico', 'inicio', 1, 0, 'Un científico de pelo alborotado y gafas de pasta con mucho aumento. Lleva puesta una bata blanca.',
+'{
+    "greeting": "Estoy ocupado, no molestes.",
+    "topics": {
+        "ocupado": {
+            "response": "Bien, veo que no respetas a un científico ocupado. ¿En qué te puedo ayudar?",
+            "unlock": ["ayudar"]
+        },
+        "ayudar": {
+            "response": "Muchos como tú piden ayuda. En lo único que puedo ayudarte es a recuperar algo de fortaleza. Otros vienen cansados y necesitan más energia",
+            "unlock": ["fortaleza","energia"]
+        },
+        "fortaleza": {
+            "response": "Si quieres recuperar algo de fortaleza, te recomiendo que mires todos estos tubos y probetas. Estoy desarrollando algunas con varios efectos interesantes, te recomiendo que pruebes el compuesto de color amarillo.",
+            "unlock": []
+        },
+        "energia": {
+            "response": "Si necesitas energía, prueba a beber de la fuente en el pasillo genético.",
+            "unlock": []
+        }
+    }
+}', 50, 50, 5, 5, 5, 5, 'El científico cae al suelo, inerte.', NULL, NULL, 3600);
