@@ -6,6 +6,9 @@
 - Coger objetos
 - Inventario
 - ~~Usar objetos (bebidas: restablecer salud,energia)~~
-- NPC
+- ~~NPC~~ 
+- ~~aplicar efectos al matar NPC.~~ 
+- Conversaciones con NPC
+- En combates, mostrar mensaje al resto de la sala de los turnos de combate
 - comandos de generación de rooms para usuarios de nivel Ultravioleta (admin)
 - Puntos de traicion (en combate si victima.traicion > atacante.traicion atacante.traicion-- else atacante.traicion++)

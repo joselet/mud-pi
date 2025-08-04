@@ -15,8 +15,8 @@ class MudGame:
         self.players = {}
         self.player_manager = PlayerManager(db_path)
         self.room_manager = RoomManager(db_path)
-        self.combat_system = CombatSystem(self.players, self.mud, self.room_manager)
-        self.room_command_processor = RoomCommandProcessor(self.room_manager, self.players, self.mud)
+        self.combat_system = CombatSystem(self.players, self.mud, self.room_manager, self.player_manager)  # Pass player_manager
+        self.room_command_processor = RoomCommandProcessor(self.room_manager, self.players, self.mud, self.player_manager)  # Pass player_manager
 
     def run(self):
         while True:

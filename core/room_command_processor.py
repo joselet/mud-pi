@@ -1,11 +1,14 @@
 import time
 import re
+from .effect_manager import EffectManager
+from .player_manager import PlayerManager  # Ensure PlayerManager is imported
 
 class RoomCommandProcessor:
-    def __init__(self, room_manager, players, mud):
+    def __init__(self, room_manager, players, mud, player_manager):
         self.room_manager = room_manager
         self.players = players
         self.mud = mud
+        self.effect_manager = EffectManager(players, mud, player_manager)  # Pass player_manager here
 
     def process_command(self, id, command, params):
         room = self.room_manager.load_room(self.players[id]["room"])
@@ -32,31 +35,10 @@ class RoomCommandProcessor:
                         self.players[id]["last_used"][obj_name][command] = current_time
 
                         effect = interaction["effect"]
-                        if effect:
-                            match = re.match(r"(\w+)([+\-=])(\d+)", effect)
-                            if match:
-                                key, operator, value = match.groups()
-                                value = int(value)
-
-                                if key == "energia":
-                                    if operator == "+":
-                                        self.players[id]["e"] = min(self.players[id].get("e", 0) + value, 100)
-                                        self.mud.send_message(id, f"[info] Recuperas {value} puntos de energía.")
-                                    elif operator == "-":
-                                        self.players[id]["e"] = max(self.players[id].get("e", 0) - value, 0)
-                                        self.mud.send_message(id, f"[info] Pierdes {value} puntos de energía.")
-                                    elif operator == "=":
-                                        self.players[id]["e"] = min(max(value, 0), 100)
-                                        self.mud.send_message(id, f"[info] Tu energía se establece en {value}.")
-                                else:
-                                    self.mud.send_message(id, f"[info] El efecto '{effect}' no está implementado.")
-                            else:
-                                self.mud.send_message(id, f"[info] Formato de efecto inválido: '{effect}'.")
+                        if effect: # Si hay un efecto asociado, aplicarlo
+                            self.effect_manager.apply_effect(id, effect, interaction.get("message"))
                         else:
                             self.mud.send_message(id, "[info] No hay efecto asociado a esta interacción.")
-
-                        if interaction["message"]:
-                            self.mud.send_message(id, interaction["message"])
                 else:
                     self.mud.send_message(id, f"No puedes '{command}' con {obj_name}.")
             else:
@@ -66,3 +48,4 @@ class RoomCommandProcessor:
                 self.room_manager.move_player(id, command, self.players, self.mud)
             else:
                 self.mud.send_message(id, f"No conozco la orden '{command}' (escribe: ayuda para ver los comandos disponibles).")
+

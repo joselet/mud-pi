@@ -1,12 +1,15 @@
 import random
 from .timer import Timer
 from .room_manager import RoomManager
+from .effect_manager import EffectManager
+from .player_manager import PlayerManager  # Ensure PlayerManager is imported
 
 class CombatSystem:
-    def __init__(self, players, mud, room_manager):
+    def __init__(self, players, mud, room_manager, player_manager):
         self.players = players
         self.mud = mud
         self.room_manager = room_manager
+        self.effect_manager = EffectManager(players, mud, player_manager)  # Pass player_manager here
         self.active_combats = {}
 
     def start_combat(self, attacker_id, victim_name):
@@ -158,6 +161,8 @@ class CombatSystem:
                     del self.active_combats[attacker_id]
                     # Mensaje de muerte del NPC
                     self.mud.send_message(attacker_id, victim['dead_message'].replace('\\n', '\n'))
+                    if victim['dead_effect']:
+                        self.effect_manager.apply_effect(attacker_id, victim['dead_effect'], victim.get('dead_effect_message'))
                     # Programar respawn del NPC
                     from .npc_manager import schedule_npc_respawn
                     schedule_npc_respawn(victim, self.room_manager, self.players, self.mud)

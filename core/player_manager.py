@@ -102,15 +102,18 @@ class PlayerManager:
 
     def save_player(self, ficha):
         if ficha.get("clon"): # existe el jugador
+            # validar pv y e para que no se almacenen valores superiores a 100
+            ficha["pv"] = min(max(ficha["pv"], 0), ficha.get("pv_max", 100))
+            ficha["e"] = min(max(ficha["e"], 0), ficha.get("e_max", 100))
             conn = sqlite3.connect(self.db_path)
             cur = conn.cursor()
             cur.execute("""
                 UPDATE players SET
-                    nivel = ?, clon = ?, pv = ?, e = ?, f = ?, r = ?, a = ?, d = ?, p = ?, c = ?, tm = ?, pm = ?,
+                    nivel = ?, clon = ?, pv_max = ?, pv = ?, e_max = ?, e = ?, f = ?, r = ?, a = ?, d = ?, p = ?, c = ?, tm = ?, pm = ?,
                     servicio = ?, sociedad_secreta = ?, sector = ?, room = ?, config = ?, inventario = ?, traicion = ?
                 WHERE name = ?
             """, (
-                ficha.get("nivel", 0), ficha.get("clon", 1), ficha["pv"], ficha["e"], ficha["f"], ficha["r"], ficha["a"], ficha["d"],
+                ficha.get("nivel", 0), ficha.get("clon", 1), ficha["pv_max"], ficha["pv"], ficha["e_max"], ficha["e"], ficha["f"], ficha["r"], ficha["a"], ficha["d"],
                 ficha["p"], ficha["c"], ficha["tm"], ficha["pm"], ficha["servicio"], ficha["sociedad_secreta"], ficha.get("sector", None), ficha["room"],
                 json.dumps(ficha.get("config", {})), json.dumps(ficha.get("inventario", {})), ficha.get("traicion", 0), ficha["name"]
             ))

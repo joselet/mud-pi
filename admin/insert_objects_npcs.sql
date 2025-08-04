@@ -54,9 +54,11 @@ CREATE TABLE IF NOT EXISTS npcs (
     a INTEGER DEFAULT 10,
     d INTEGER DEFAULT 10,
     dead_message TEXT DEFAULT 'tu enemigo muere horriblemente.',
+    dead_effect TEXT, -- Efecto al morir, recompensa o penalizacion
+    dead_effect_message TEXT, -- Mensaje al aplicar el efecto
     respawn_time INTEGER DEFAULT 3600 -- Tiempo en segundos para que el NPC vuelva a aparecer
 );
 
-INSERT INTO npcs (display_name, alias, room, can_talk, can_fight, description, conversation, pv, pv_max, f, r, a, d, dead_message, respawn_time) VALUES
-('Guardia-robot', 'guardia,robot', 'inicio', 1, 1, 'Un androide de aspecto bastante humanizado. Está pintado en color blanco metalizado. En su pecho lleva imprimida una inscripción: \033[91mGua-R-DIA-P3-1\033[0m. No parece ir armado.','{"greeting": "¡Detente ahí, ciudadano!"}', 100, 100, 15, 10, 8, 12, 'El guardia-robot colapsa en un montón de chispas.\nUn sonido de alarma retumba en toda la sala. La voz del ordenador se escucha por todos los altavoces de la zona.\nAtención: Se ha producido una grave traición en el sector del laboratorio genético. Envien rápidamente un Guardia-robot de reconocimiento y establezcan un perímetro de seguridad.', 60),
-('Cient-I-FICO', 'cientifico', 'inicio', 1, 0, 'Un científico de pelo alborotado y gafas de pasta con mucho aumento. Lleva puesta una bata blanca.','{"greeting": "Estoy ocupado, no molestes."}', 50, 50, 5, 5, 5, 5, 'El científico cae al suelo, inerte.', 3600);
+INSERT INTO npcs (display_name, alias, room, can_talk, can_fight, description, conversation, pv, pv_max, f, r, a, d, dead_message, dead_effect, dead_effect_message, respawn_time) VALUES
+('Guardia-robot', 'guardia,robot', 'inicio', 1, 1, 'Un androide de aspecto bastante humanizado. Está pintado en color blanco metalizado. En su pecho lleva imprimida una inscripción: \033[91mGua-R-DIA-P3-1\033[0m. No parece ir armado.','{"greeting": "¡Detente ahí, ciudadano!"}', 100, 100, 15, 10, 8, 12, 'El guardia-robot colapsa en un montón de chispas.\nUn sonido de alarma retumba en toda la sala. La voz del ordenador se escucha por todos los altavoces de la zona.\nAtención: Se ha producido una grave traición en el sector del laboratorio genético. Envien rápidamente un Guardia-robot de reconocimiento y establezcan un perímetro de seguridad.', 'traicion+1', 'El ordenador ha detectado tu traición. Has perdido algo de confianza (traicion + 1)', 60),
+('Cient-I-FICO', 'cientifico', 'inicio', 1, 0, 'Un científico de pelo alborotado y gafas de pasta con mucho aumento. Lleva puesta una bata blanca.','{"greeting": "Estoy ocupado, no molestes."}', 50, 50, 5, 5, 5, 5, 'El científico cae al suelo, inerte.', NULL, NULL, 3600);
