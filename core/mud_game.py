@@ -5,7 +5,7 @@ from .mudserver import MudServer
 from .player_manager import PlayerManager
 from .room_manager import RoomManager
 from .combat_system import CombatSystem
-from .config import NIVEL_DISPLAY, NIVEL_COLOR, COMMAND_ALIASES, SERVICIOS
+from .config import NIVEL_DISPLAY, NIVEL_COLOR, COMMAND_ALIASES, SERVICIOS, get_life_state
 from .room_command_processor import RoomCommandProcessor
 
 
@@ -129,8 +129,7 @@ class MudGame:
                     for pid, pl in self.players.items():
                         if self.players[pid]["room"] == self.players[id]["room"]:
                             self.mud.send_message(pid, f"{self.players[id]['display_name']} dice: {params}")
-                
-                
+
                 # hablar con npc
                 elif command == "hablar":
                     npc_name = params.strip().lower()
@@ -144,50 +143,48 @@ class MudGame:
                         self.mud.send_message(id, f"{npc['display_name']} dice: {conversation.get('greeting', 'Hola.')}")
                     else:
                         self.mud.send_message(id, f"No puedes hablar con '{npc_name}'.")
-
-#                elif command == "atacar": # solo para NPC. Jugadores es matar. Se fusionan las dos funciones
-#                    npc_name = params.strip().lower()
-#                    room_npcs = self.room_manager.load_npcs_in_room(self.players[id]["room"])
-#                    npc = next(
-#                        (npc for npc in room_npcs if npc_name == npc["display_name"].lower() or npc_name in npc.get("alias", "").lower().split(",")),
-#                        None
-#                    )
-#                    if npc and npc["can_fight"]:
-#                        self.combat_system.start_combat_with_npc(id, npc)
-#                    else:
-#                        mud.send_message(id, f"No puedes atacar a '{npc_name}'.")
                 
                 elif command == "mirar":
                     room = self.room_manager.load_room(self.players[id]["room"])
                     if params:  # Si se especifica un objeto
-                        obj_name = params.lower()
+                        obj_a_mirar = params.lower()
                         # Buscar si el objeto o alguno de sus alias está en la sala
                         matching_object = next(
-                            (obj for alias, obj in room["objects"].items() if obj_name in alias.split(",")),
+                            (obj for alias, obj in room["objects"].items() if obj_a_mirar in alias.split(",")),
                             None
                         )
                         if matching_object:
                             self.mud.send_message(id, matching_object["description"])
-                        else:
-                            # comprobar si es un NPC
-                            # Si se especifica un NPC
-                            npc_name = params.lower()
-                            room_npcs = self.room_manager.load_npcs_in_room(self.players[id]["room"])
-                            npc = next(
-                                (npc for npc in room_npcs if npc_name == npc["display_name"].lower() or npc_name in npc.get("alias", "").lower().split(",")),
-                                None
+                        # Buscar si es un NPC
+                        room_npcs = self.room_manager.load_npcs_in_room(self.players[id]["room"])
+                        npc = next(
+                            (npc for npc in room_npcs if obj_a_mirar == npc["display_name"].lower() or obj_a_mirar in npc.get("alias", "").lower().split(",")),
+                            None
+                        )
+                        if npc:
+                            life_state = get_life_state(npc.get("pv", 0), npc.get("pv_max", 100))
+                            self.mud.send_message(id,
+                                f"Observas a {npc['display_name']}:\n"
+                                f"{npc['description']}\n"
+                                f"{'Parece amigable.' if npc['can_talk'] else 'No parece amigable.'}\n"
+                                f"Se encuentra {life_state}."
                             )
-                            if npc:
-                                self.mud.send_message(id,
-                                    f"Observas a {npc['display_name']}:\n"
-                                    f"{npc['description']}\n"
-                                    f"{'Parece amigable.' if npc['can_talk'] else 'No parece amigable.'}\n"
-                                    f"Goza de {npc.get('pv', 0)} puntos de vida."
-                                )
-                            else:
-                                # Si no se encuentra el objeto ni el NPC
-                                self.mud.send_message(id, f"No ves nada llamado '{obj_name}' en este lugar.")
-                    else:  # Si no se especifica un objeto, mostrar la sala
+                        # Buscar si es otro jugador
+                        player = next(
+                            (pl for pl in self.players.values() if obj_a_mirar == pl["display_name"].lower() or obj_a_mirar in pl.get("name", "").lower().split(",")),
+                            None
+                        )
+                        if player:
+                            life_state = get_life_state(player.get("pv", 0), player.get("pv_max", 100))
+                            self.mud.send_message(id,
+                                f"Observas a {player['display_name']}:\n"
+                                f"Se encuentra {life_state}."
+                            )
+
+                        if not matching_object and not npc and not player:
+                            self.mud.send_message(id, f"No ves nada llamado '{obj_a_mirar}' en este lugar.")
+
+                    else:  # Si no se especifica un parámetro, mostrar la sala
                         # recuperar la configuración detallada del jugador
                         config_detallado_actual = self.players[id]["config"].get("detallado", True)
                         # forzar la visualización detallada

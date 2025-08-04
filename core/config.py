@@ -14,7 +14,10 @@ COMMAND_ALIASES = {
     "ab": "abajo",
     "de": "dentro",
     "fu": "fuera",
-    "quitar":"abandonar"
+    "quitar":"abandonar",
+    "atacar": "matar",
+    "cfg": "config",
+    "f": "ficha"
 }
 
 # Reversed dictionary for aliases (full name -> alias)
@@ -206,3 +209,22 @@ SERVICIOS = {
         )
     }
 }
+
+def get_life_state(pv, pv_max=100):
+    """
+    Returns a descriptive state based on the percentage of life points (pv).
+    :param pv: Current life points.
+    :param pv_max: Maximum life points.
+    :return: A string describing the life state.
+    """
+    percentage = (pv / pv_max) * 100
+    if percentage >= 90:
+        return "en perfecto estado"
+    elif percentage >= 70:
+        return "con algunas magulladuras"
+    elif percentage >= 40:
+        return "con heridas visibles"
+    elif percentage >= 10:
+        return "en estado crítico"
+    else:
+        return "al borde del colapso" # o al borde de la muerte
