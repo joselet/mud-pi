@@ -121,7 +121,8 @@ class MudGame:
                     self.mud.send_message(id, "  ir <exit>        - Mover hacia la salida especificada")
                     self.mud.send_message(id, "  ficha            - Comprobar la ficha y estado de tu personaje")
                     self.mud.send_message(id, "  decir <message>  - Decir algo en voz alta")
-                    self.mud.send_message(id, "  hablar <arg>     - iniciar una conversación con un NPC")
+                    self.mud.send_message(id, "  hablar <npc>     - iniciar una conversación con un NPC")
+                    self.mud.send_message(id, "                   - hablar <nombre_npc> <tema> - Hablar con un NPC sobre un tema específico")
                     self.mud.send_message(id, "  matar <objetivo> - Atacar a otro personaje")
                     self.mud.send_message(id, "  config           - configura algun aspecto del juego y tu personaje (en desarrollo)")
                     self.mud.send_message(id, "  abandonar        - Abandonar el juego")
@@ -161,18 +162,6 @@ class MudGame:
                                 self.mud.send_message(id, f"No puedes hablar sobre '{topic}' todavía.")
                     else:
                         self.mud.send_message(id, f"No puedes hablar con '{npc_name}'.")
-                # elif command == "hablar":
-                #     npc_name = params.strip().lower()
-                #     room_npcs = self.room_manager.load_npcs_in_room(self.players[id]["room"])
-                #     npc = next(
-                #         (npc for npc in room_npcs if npc_name == npc["display_name"].lower() or npc_name in npc.get("alias", "").lower().split(",")),
-                #         None
-                #     )
-                #     if npc and npc["can_talk"]:
-                #         conversation = json.loads(npc["conversation"])
-                #         self.mud.send_message(id, f"{npc['display_name']} dice: {conversation.get('greeting', 'Hola.')}")
-                #     else:
-                #         self.mud.send_message(id, f"No puedes hablar con '{npc_name}'.")
                 
                 elif command == "mirar":
                     room = self.room_manager.load_room(self.players[id]["room"])

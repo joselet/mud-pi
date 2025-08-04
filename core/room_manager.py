@@ -45,24 +45,25 @@ class RoomManager:
                     "interactions": {}  # Aquí almacenaremos los comandos y efectos
                 }
 
-        # Buscar las interacciones de los objetos
+        # Buscar las interacciones de los objetos en la sala
         cur.execute("SELECT object_name, command, effect, message, cooldown, cooldown_message FROM object_interactions WHERE room_name = ?", (room_name.lower(),))
+        interactions = {}
         for row in cur.fetchall():
-            obj_name = row["object_name"]
-            if obj_name in objects:
-                objects[obj_name]["interactions"][row["command"]] = {
-                    "effect": row["effect"],
-                    "message": row["message"],
-                    "cooldown": row["cooldown"] or 0,  # Usa 0 si cooldown es None
-                    "cooldown_message": row["cooldown_message"]
-                }
+            key = f"{row['command']} {row['object_name']}".lower()
+            interactions[key] = {
+                "effect": row["effect"],
+                "message": row["message"],
+                "cooldown": row["cooldown"] or 0,  # Usa 0 si cooldown es None
+                "cooldown_message": row["cooldown_message"]
+            }
 
         room_data = {
             "name": room_row["name"],
             "title": room_row["title"],
             "description": room_row["description"],
             "exits": exits,
-            "objects": objects  # Incluye los objetos con sus interacciones
+            "objects": objects,  # Incluye los objetos con sus interacciones
+            "interactions": interactions  # Agregar las interacciones a los datos de la sala
         }
 
         conn.close()
