@@ -14,87 +14,54 @@ En 1991 Paranoia fue traducido y publicado en lengua española por la hoy en dí
 
 Fuente: [wikipedia](https://es.wikipedia.org/wiki/Paranoia_(juego_de_rol))
 
-Requirements
-------------
+Requerimientos:
+---------------
+- Para instalar la base de datos necesitarás sqlite. Luego ejecutar el programa install.bat o por separado sus comandos internos en una terminal.
+- Para arrancar el servidor: _Python_ (2.7+ or 3.3+) <http://www.python.org/download/>
+- Del lado del cliente necesitarás telnet \<ip del servidor> 1234
 
-You will need to install _Python_ (2.7+ or 3.3+) where you wish to run the 
-server. Installers for Windows and Mac can be found at 
-<http://www.python.org/download/>. There are also tarballs for Linux, although 
-the best way to install on Linux would be via the package manager.
-
-To allow players to connect remotely, the server will also need to be connected
-to the internet. 
-
-To connect to the server you will need a telnet client. On Mac, Linux, and 
-versions of Windows prior to Windows Vista, the telnet client is usually 
-installed by default. For Windows Vista, 7, 8 or later, you may need to follow
-[this guide](http://technet.microsoft.com/en-us/library/cc771275%28v=ws.10%29.aspx)
-to install it.
+[esta guia](http://technet.microsoft.com/en-us/library/cc771275%28v=ws.10%29.aspx)
+puede ayudarte.
 
 
-Running the Server
-------------------
+Ejecutando el Servidor
+----------------------
 
-### On Windows
+### Windows
 
-Double click on `paranoia.py` - the file will be opened with the Python 
-interpreter. To stop the server, simply close the terminal window.
+Doble click en `paranoia.py` - el fichero se abrirá con python
 
 
-### On Mac OSX and Linux (including Raspberry Pi)
+### En Mac OSX y Linux
 
-From the terminal, change to the directory containing the script and run 
-
+Desde la terminal, ir al directorio principal y teclear:
 	python paranoia.py
 	
-Note, if you are connected to the machine via SSH, you will find that the 
-script stops running when you quit the SSH session. A simple way to leave the 
-script running is to use a tool called `screen`. Connect via SSH as usual then
-run `screen`. You will enter what looks like a normal shell prompt, but now you
-can start the python script running and hit `ctl+a` followed by `d` to leave
-_screen_ running in the background. The next time you connect, you can 
-re-attach to your screen session using `screen -r`. Alternatively you could
-[create a daemon script](http://jimmyg.org/blog/2010/python-daemon-init-script.html)
-to run the script in the background every time the server starts.
+Nota, si te conectas al servidor por SSH verás que el script de juego se detiene cuando cierras la sesión SSH.
 
+Una forma sencilla de evitarlo es usando una herramienta llamada `screen`. Conecta via SSH y ejecuta `screen`. Verás que estás en un shell normal, pero ahroa puedes ejecutar el script de python y pulsar `ctl+a` seguido de `d` para dejar
+_screen_ funcionando background. La proxima vez que conectes, te puedes enganchar a tu sesión de screen usando `screen -r`. Tambén puedes 
+[crear un daemon script](http://jimmyg.org/blog/2010/python-daemon-init-script.html)
+para ejecutar el script cada vez que se inicie el servidor
 
-Connecting to the Server
-------------------------
-
-If the server is running behind a NAT such as a home router, you will need to 
-set up port **1234** to be forwarded to the machine running the server. See your
-router's instructions for how to set this up. There are a large number of 
-setup guides for different models of router here: 
-<http://portforward.com/english/routers/port_forwarding/>
-
-You will need to know the _external_ IP address of the machine running the 
-server. This can be discovered by visiting <http://www.whatsmyip.org> from
-that machine.
-
-To connect to the server, open your operating system's terminal or command
-prompt and start the telnet client by running:
+Conectar al Server para jugar
+-----------------------------
 
 	telnet <ip address> 1234
 	
-where `<ip address>` is the external IP address of the server, as described 
-above. 1234 is the port number that the server listens on.
+Donde `<ip address>` es la IP externa del servidor. 1234 es el puerto sobre el que el servidor del juego está escuchando.
 
-If you are using Windows Vista, 7, 8 or later and get the message:
+Al conectar recibirás un mensaje
 
-	'telnet' is not recognized as an internal or external command, operable
-	program or batch file.
-	
-then follow 
-[this guide](http://technet.microsoft.com/en-us/library/cc771275%28v=ws.10%29.aspx)
-to install the Windows telnet client.
+	Qué nombre tiene tu personaje?
 
-If all goes well, you should be presented with the message 
+Ahí empieza todo.
 
-	What is your name?
 
-To quit the telnet client, press `ctl + ]` to go to the prompt, and then 
-type `quit`.
+Para salir del cliente de telnet, puedes pulsar Ctrl+C o teclear quitar
 
+
+# Información adicional de posible interés (en inglés)
 
 What is Telnet?
 ---------------
@@ -115,32 +82,6 @@ graphical Massively-Multiplayer Online Role-Playing Games we have today, like
 World of Warcraft. <http://www.mudconnect.com> is a great site for learning 
 more about MUDs.
 
-
-Extending the Game
-------------------
-
-MUD Pi is a free and open source project (that's _free_ as in _freedom_). This 
-means that the source code is included and you are free to read it, copy it, 
-extend it and use it as a starting point for your own MUD game or any other 
-project. See `licence.md` for more info.
-
-MUD Pi was written in the Python programming language. If you have never used
-Python before, or are new to programming in general, why not try an online
-tutorial, such as <http://www.learnpython.org/>.
-
-There are 2 source files in the project. `mudserver.py` is a module containing
-the `MudServer` class - a basic server script which handles player connections 
-and sending and receiving messages. `simplemud.py` is an example game using 
-`MudServer`, with player chat and rooms to move between. 
-
-The best place to start tweaking the game would be to have a look at 
-`simplemud.py`. Why not try adding more rooms to the game world? You'll find
-more ideas for things to try in the source code itself.
-
-Of course if you're feeling more adventurous you could take a look at the 
-slightly more advanced networking code in `mudserver.py`.
-
-
 MUD-Pi-Based Projects
 ---------------------
 
@@ -157,7 +98,7 @@ Here are some of the cool projects people have made from MUD-Pi:
 Author
 ------
 
-MUD Pi was written by Mark Frimston
+MUD Pi was written originally by Mark Frimston, then this fork by José Manuel Heras
 
 For feedback, please email <mfrimston@gmail.com> or add a comment on the 
 project's [Github page](http://github.com/frimkron/mud-pi)
