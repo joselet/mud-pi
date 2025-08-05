@@ -16,12 +16,19 @@ Fuente: [wikipedia](https://es.wikipedia.org/wiki/Paranoia_(juego_de_rol))
 
 Requerimientos:
 ---------------
-- Para instalar la base de datos necesitarás sqlite. Luego ejecutar el programa install.bat o por separado sus comandos internos en una terminal.
 - Para arrancar el servidor: _Python_ (2.7+ or 3.3+) <http://www.python.org/download/>
 - Del lado del cliente necesitarás telnet \<ip del servidor> 1234
 
 [esta guia](http://technet.microsoft.com/en-us/library/cc771275%28v=ws.10%29.aspx)
 puede ayudarte.
+
+Instalar la base de datos
+-------------------------
+Abre una terminal y navega a la carpeta _admin_ y a continuación teclea:
+
+	python install.py
+
+O bien en Windows simplemente doble click en `install.py`
 
 
 Ejecutando el Servidor
@@ -35,6 +42,7 @@ Doble click en `paranoia.py` - el fichero se abrirá con python
 ### En Mac OSX y Linux
 
 Desde la terminal, ir al directorio principal y teclear:
+
 	python paranoia.py
 	
 Nota, si te conectas al servidor por SSH verás que el script de juego se detiene cuando cierras la sesión SSH.
