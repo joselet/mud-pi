@@ -19,6 +19,12 @@ class MudGame:
         self.room_command_processor = RoomCommandProcessor(self.room_manager, self.players, self.mud, self.player_manager)  # Pass player_manager
 
     def run(self):
+        print(f"Paranoia MUD está arrancando. Bienvenido al terminal de información clasificada del Complejo Alfa.")
+        print(f"Abre una nueva terminal y conéctate al servidor con \"telnet localhost 1234\" o \"telnet <ip del servidor> 1234\" para incorporar un esclarecedor al complejo.\n")
+        print(f"A continuación en esta terminal se mostrará todo aquello que suceda bajo el dominio del \033[97;;1m ordenador\033[0m.")
+        print(f"Recuerda que todo lo que hagas será registrado y monitorizado por el \033[97;;1m ordenador\033[0m.")
+        print(f"El ordenador es tu amigo, pero no te fíes de él. No te fíes de nadie.\n")
+
         while True:
             time.sleep(0.2)
             self.mud.update()
@@ -93,6 +99,7 @@ class MudGame:
                     self.players[id]["awaiting_password"] = False
                     self.mud.send_message(id, f"Bienvenido al juego, {self.players[id]['display_name']}. Escribe 'ayuda' para obtener una lista de comandos.")
                     print(f"[LOG] (pid: {id}) {self.players[id]['name']} entró al juego.")
+                    print(f"[LOG] (pid= {id}): Detectada inserción física de {self.players[id]['display_name']} en: {self.players[id]['room']}.")
                     self.room_manager.show_room_to_player(id, self.players, self.mud)
                     # notificar a otros jugadores
                     for pid, pl in self.players.items():

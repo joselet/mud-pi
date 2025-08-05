@@ -61,8 +61,8 @@ class CombatSystem:
         }
         self.mud.send_message(player_id, f"Has iniciado un combate contra {npc['display_name']}.")
         #loguear
-        print(f"[LOG] (Ataque a NPC) Attacker ID: {player_id}, NPC ID: {npc['id']}")
-        print(f"[LOG] NPCs in room: {[npc['id'] for npc in self.room_manager.load_npcs_in_room(self.players[player_id]['room'])]}")
+        print(f"[LOG] (Ataque a NPC) ID atacante: {player_id}, NPC ID: {npc['id']}")
+        print(f"[LOG] NPCs en room: {[npc['id'] for npc in self.room_manager.load_npcs_in_room(self.players[player_id]['room'])]}")
         self.process_turn(player_id)
 
 

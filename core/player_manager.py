@@ -20,7 +20,7 @@ class PlayerManager:
             pm = random.randint(1, 20)
             puntos = f + r + a + d + p + c + tm + pm
         ficha = {
-            "name": name,"password": password,"nivel": 0,"clon": 1,"pv": 100,"e": 100,"f": f,"r": r,"a": a,"d": d,"p": p,"c": c,"tm": tm,"pm": pm,"servicio": None,"sociedad_secreta": None,"sector": None,"room": "inicio","config": {},"inventario": {},"traicion": 0
+            "name": name,"password": password,"nivel": 0,"clon": 1,"pv_max": 100,"pv": 100,"e_max":100,"e": 100,"f": f,"r": r,"a": a,"d": d,"p": p,"c": c,"tm": tm,"pm": pm,"servicio": None,"sociedad_secreta": None,"sector": None,"room": "inicio","config": {},"inventario": {},"traicion": 0
         }
         # Servicio
         servicio_roll = random.randint(1, 20)
@@ -63,6 +63,7 @@ class PlayerManager:
 
         conn = sqlite3.connect(self.db_path)
         cur = conn.cursor()
+        ## añadir columna pv_max y e_max en el momento del insert
         cur.execute("""
             INSERT INTO players (name, password, nivel, clon, pv, e, f, r, a, d, p, c, tm, pm, servicio, sociedad_secreta, sector, room, config, inventario, traicion)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)

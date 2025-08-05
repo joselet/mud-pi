@@ -136,6 +136,7 @@ class RoomManager:
                 
                 # Show the new room to the player
                 self.show_room_to_player(id, players, mud)
+                print(f"[LOG] (pid= {id}): {players[id]['display_name']} fué desde {current_room} a {new_room} a través de la salida '{ex}'")  # Debug output
             else:
                 mud.send_message(id, f"Salida desconocida '{ex}'")
         except ValueError as e:
