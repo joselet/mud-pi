@@ -46,7 +46,7 @@ NIVEL_COLOR = {
     5: "\033[96m",  # I (o 94)
     6: "\033[95m",  # M
     7: "\033[35m",  # UV
-    8: "\033[97m",   # X
+    8: "\033[97;;1m",   # X
     "reset": "\033[0m"  # Reset color
 }
 
@@ -228,3 +228,13 @@ def get_life_state(pv, pv_max=100):
         return "en estado crítico"
     else:
         return "al borde del colapso" # o al borde de la muerte
+
+def adaptaTexto(texto):
+    """
+    Adapts the text to replace certain characters with their corresponding ANSI codes.
+    :param texto: The input text to adapt.
+    :return: The adapted text with ANSI codes.
+    """
+    adaptado = texto.replace("\\n", "\n").replace("\\033[", "\033[")
+    adaptado = adaptado.replace("\\033[0m", "\033[0m")
+    return adaptado

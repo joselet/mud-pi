@@ -1,5 +1,5 @@
 import sqlite3
-from .config import REVERSED_COMMAND_ALIASES  # Import the reversed aliases
+from .config import REVERSED_COMMAND_ALIASES, adaptaTexto  # Import the reversed aliases and adaptaTexto
 
 class RoomManager:
     def __init__(self, db_path):
@@ -154,7 +154,7 @@ class RoomManager:
         # asignar un id a cada NPC
         for i, npc in enumerate(npcs):
             npc["id"] = f"_npc{npc['id']}"
-            npc["description"] = npc["description"].replace("\\033[", "\033[")  # Normalizar la descripción por si hubieran colores
+            npc["description"] = adaptaTexto(npc["description"])
         conn.close()
         return npcs
 

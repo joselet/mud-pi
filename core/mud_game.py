@@ -143,23 +143,34 @@ class MudGame:
                     )
 
                     if npc and npc["can_talk"]:
-                        conversation = json.loads(npc["conversation"])
-                        if not topic:  # Si no se especifica un tema, mostrar el saludo inicial
-                            self.mud.send_message(id, f"{npc['display_name']} dice: {conversation.get('greeting', 'Hola.')}")
-                            self.players[id].setdefault("unlocked_topics", {}).setdefault(npc_name, [])
-                        else:
-                            unlocked_topics = self.players[id].get("unlocked_topics", {}).get(npc_name, [])
-                            if topic in unlocked_topics or topic in conversation["topics"]:
-                                topic_data = conversation["topics"].get(topic)
-                                if topic_data:
-                                    self.mud.send_message(id, f"{npc['display_name']} dice: {topic_data['response']}")
-                                    # Desbloquear nuevos temas
-                                    unlocked_topics.extend(topic_data.get("unlock", []))
-                                    self.players[id]["unlocked_topics"][npc_name] = list(set(unlocked_topics))
-                                else:
-                                    self.mud.send_message(id, f"{npc['display_name']} no tiene nada que decir sobre '{topic}'.")
+                        try:
+                            conversation = json.loads(npc["conversation"])
+                            if not topic:  # Si no se especifica un tema, mostrar el saludo inicial
+                                self.mud.send_message(id, f"{npc['display_name']} dice: {conversation.get('greeting', 'Hola.')}")
+                                unlocked_topics = self.players[id].setdefault("unlocked_topics", {}).setdefault(npc_name, [])
+                                # Desbloquear temas desde el saludo inicial si existe un campo "unlock"
+                                greeting_unlock = conversation.get("unlock", [])
+                                unlocked_topics.extend(greeting_unlock)
+                                self.players[id]["unlocked_topics"][npc_name] = list(set(unlocked_topics))
                             else:
-                                self.mud.send_message(id, f"No hay nada que decir de '{topic}' todavía.")
+                                unlocked_topics = self.players[id].setdefault("unlocked_topics", {}).setdefault(npc_name, [])
+                                if topic in unlocked_topics:  # Verificar si el tema ya está desbloqueado
+                                    topic_data = conversation["topics"].get(topic)
+                                    if topic_data:
+                                        self.mud.send_message(id, f"{npc['display_name']} dice: {topic_data['response']}")
+                                        # Desbloquear nuevos temas
+                                        new_topics = topic_data.get("unlock", [])
+                                        unlocked_topics.extend(new_topics)
+                                        self.players[id]["unlocked_topics"][npc_name] = list(set(unlocked_topics))
+                                    else:
+                                        self.mud.send_message(id, f"{npc['display_name']} no tiene nada que decir sobre '{topic}'.")
+                                elif topic in conversation.get("topics", {}):  # Si el tema existe pero no está desbloqueado
+                                    self.mud.send_message(id, f"No hay nada que decir de '{topic}' todavía.")
+                                else:  # Si el tema no existe en la conversación
+                                    self.mud.send_message(id, f"{npc['display_name']} no tiene nada que decir sobre '{topic}'.")
+                        except (json.JSONDecodeError, KeyError, TypeError) as e:
+                            print(f"[WRN] Error al procesar la conversación: {e} para el NPC {npc['display_name']}.")
+                            self.mud.send_message(id, f"{npc['display_name']} no tiene ganas de hablar de '{topic}' ni de nada más.")
                     else:
                         self.mud.send_message(id, f"No puedes hablar con '{npc_name}'.")
                 

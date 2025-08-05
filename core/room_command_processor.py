@@ -2,6 +2,7 @@ import time
 import re
 from .effect_manager import EffectManager
 from .player_manager import PlayerManager  # Ensure PlayerManager is imported
+from .config import adaptaTexto
 
 class RoomCommandProcessor:
     def __init__(self, room_manager, players, mud, player_manager):
@@ -32,12 +33,12 @@ class RoomCommandProcessor:
 
                     effect = interaction["effect"]
                     if effect:  # Si hay un efecto asociado, aplicarlo
-                        self.effect_manager.apply_effect(id, effect, interaction.get("message"))
+                        self.effect_manager.apply_effect(id, effect, adaptaTexto(interaction.get("message")))
                     else:
-                        self.mud.send_message(id, "[info] No hay efecto asociado a esta interacción.")
-                        self.mud.send_message(id, interaction["message"] if interaction["message"] else "No hay efecto asociado a esta interacción.")
+                        #self.mud.send_message(id, "[info] No hay efecto asociado a esta interacción.")
+                        self.mud.send_message(id, adaptaTexto(interaction["message"]) if interaction["message"] else "[info] No hay mensaje de interacción.")
             else:
-                self.mud.send_message(id, f"No puedes '{command}' con '{params}'.")
+                self.mud.send_message(id, f"Intentas '{command}' '{params}'. Pero no sucede nada.")
         else:  # Si no hay parámetros, procesar otros comandos dinámicos
             if command in room["exits"]:  # Si el comando es una salida
                 self.room_manager.move_player(id, command, self.players, self.mud)

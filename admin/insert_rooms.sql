@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS exits (
 INSERT INTO rooms (name, title, description) VALUES
 ('inicio', 'P3: Laboratorio genético', 'Un frío laboratorio genético, lleno de tubos de ensayo y equipos científicos.'),
 ('lab/camara_criogenica', 'P2: Cámara Criogénica', 'Un cuarto helado con cápsulas criogénicas alineadas contra las paredes. Cada cápsula contiene un cuerpo congelado en perfecto estado. Ves un pequeño armario tras la puerta'),
-('lab/farmacia', 'P3: Farmacia', 'Un laboratorio lleno de estanterías con frascos etiquetados con nombres incomprensibles. El aire huele a químicos fuertes y algo metálico. En un rincón ves un pequeño terminal de datos.'),
+('lab/farmacia', 'P3: Farmacia', 'Un laboratorio lleno de estanterías con frascos etiquetados con nombres incomprensibles. El aire huele a químicos fuertes y algo metálico. En un rincón ves una pared llena de anotaciones junto a un pequeño terminal de datos.'),
 ('lab/almacen_quimico', 'P3: Almacén Químico', 'Un almacén desordenado lleno de cajas y frascos. Parece que aquí se almacenan sustancias altamente tóxicas. Ves varias estanterías repletas de botellas y recipientes etiquetados con símbolos de peligro. Un leve zumbido eléctrico llena el aire. El fluorescente de la sala parpadea ligeramente.'),
 ('lab/sala_control', 'P1: Sala de Control', 'Una sala de control con pantallas que muestran datos del laboratorio. Un gran mapa del laboratorio está colgado en la pared.'),
 ('lab/planta1', 'P1: Laboratorio de Clonación', 'Un laboratorio con cápsulas de vidrio llenas de líquido verde. Dentro de cada cápsula flota un cuerpo humanoide en diferentes etapas de desarrollo.'),
