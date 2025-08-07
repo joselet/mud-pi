@@ -252,6 +252,28 @@ class CombatSystem:
         self.players[loser_id]["clon"] += 1
         self.players[loser_id]["display_name"] = f"{self.players[loser_id]['name'].capitalize()}-{self.players[loser_id]['sector']}-{self.players[loser_id]['clon']}"
         self.players[loser_id]["pv"] = 25
+        # Si el jugador ha alcanzado el límite de clones, se le informa y se archiva su patrón genético
+        if self.players[loser_id]["clon"] >= 6:
+            print(f"[LOG] Jugador {self.players[loser_id]['display_name']} ha alcanzado el límite de clones. Almacenando...")
+            self.mud.send_message(loser_id, f"\033[97;;1mAtención, Ciudadano.\n"
+                        f"Con la terminación de su sexta y última réplica clónica\n"
+                        f", el Ordenador, en su incansable búsqueda de la optimización y felicidad para el Complejo Alfa, se ha visto en la imperativa necesidad de evaluar la viabilidad de su patrón genético\n"
+                        f".\n"
+                        f"Los registros detallados de su desempeño indican una tasa de recurrencia de fallos operativos y de adaptación que excede los parámetros aceptables para un servicio leal y eficiente\n"
+                        f". Esta persistencia de anomalías a lo largo de todas las activaciones de su línea sugiere una desviación inerradicable en su secuencia genética, posiblemente resultado de una interferencia externa o un lamentable error de calibración en la fase de gestación. El Ordenador, que no comete errores, concluye que cualquier defecto presente debe ser ajeno a su propia programación inicial\n"
+                        f".\n"
+                        f"Por el bienestar colectivo y la salvaguarda de los valiosos recursos del Complejo Alfa\n"
+                        f", su código genético ha sido marcado como inservible para el futuro progreso de la especie. Por tanto, y con efecto inmediato, su patrón genético será archivado permanentemente para un análisis póstumo en el Servicio Central de Procesamiento (SCP)\n"
+                        f".\n"
+                        f"Agradecemos su (reiterada) contribución y sacrificios en el cumplimiento de sus misiones.\n"
+                        f"El Ordenador es su amigo.\033[0m\n")
+            self.players[loser_id]["room"] = "lab/archivo_genetico"
+            self.players[loser_id]["pv"] = 0
+        # guardar los datos del jugador en la base de datos
+        #self.player_manager.save_player(self.players[loser_id])
+
+
+
 
 
     def end_combat(self, winner_id, loser_id):
@@ -270,3 +292,23 @@ class CombatSystem:
         self.players[loser_id]["clon"] += 1
         self.players[loser_id]["display_name"] = f"{self.players[loser_id]['name'].capitalize()}-{self.players[loser_id]['sector']}-{self.players[loser_id]['clon']}"
         self.players[loser_id]["pv"] = 25
+        # Si el jugador ha alcanzado el límite de clones, se le informa y se archiva su patrón genético
+        if self.players[loser_id]["clon"] >= 6:
+            print(f"[LOG] Jugador {self.players[loser_id]['display_name']} ha alcanzado el límite de clones. Almacenando...")
+            self.mud.send_message(loser_id, f"\033[97;;1mAtención, Ciudadano.\n"
+                        f"Con la terminación de su sexta y última réplica clónica\n"
+                        f", el Ordenador, en su incansable búsqueda de la optimización y felicidad para el Complejo Alfa, se ha visto en la imperativa necesidad de evaluar la viabilidad de su patrón genético\n"
+                        f".\n"
+                        f"Los registros detallados de su desempeño indican una tasa de recurrencia de fallos operativos y de adaptación que excede los parámetros aceptables para un servicio leal y eficiente\n"
+                        f". Esta persistencia de anomalías a lo largo de todas las activaciones de su línea sugiere una desviación inerradicable en su secuencia genética, posiblemente resultado de una interferencia externa o un lamentable error de calibración en la fase de gestación. El Ordenador, que no comete errores, concluye que cualquier defecto presente debe ser ajeno a su propia programación inicial\n"
+                        f".\n"
+                        f"Por el bienestar colectivo y la salvaguarda de los valiosos recursos del Complejo Alfa\n"
+                        f", su código genético ha sido marcado como inservible para el futuro progreso de la especie. Por tanto, y con efecto inmediato, su patrón genético será archivado permanentemente para un análisis póstumo en el Servicio Central de Procesamiento (SCP)\n"
+                        f".\n"
+                        f"Agradecemos su (reiterada) contribución y sacrificios en el cumplimiento de sus misiones.\n"
+                        f"El Ordenador es su amigo.\033[0m\n")
+            self.players[loser_id]["room"] = "lab/archivo_genetico"
+            self.players[loser_id]["pv"] = 0
+        # guardar los datos del jugador en la base de datos
+        #self.player_manager.save_player(self.players[loser_id])
+

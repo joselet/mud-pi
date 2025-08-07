@@ -92,13 +92,13 @@ class PlayerManager:
             print(f"[WRN] Error loading player (name= {name}): Jugador no encontrado. Crear?")
             return None
         ficha = dict(row)
+
         ficha["config"] = json.loads(ficha.get("config", "{}") or "{}")  # Manejar None o vacío
         ficha["inventario"] = json.loads(ficha.get("inventario", "{}") or "{}")  # Manejar None o vacío
         if ficha.get("nivel") > 0:
             ficha["display_name"] = f"{NIVEL_COLOR.get(ficha.get('nivel', 0))}{ficha['name'].capitalize()}-{NIVEL_DISPLAY.get(ficha.get('nivel', 0))}-{ficha['sector']}-{ficha['clon']}{NIVEL_COLOR.get('reset')}"
         else:
             ficha["display_name"] = f"{ficha['name'].capitalize()}-{ficha['sector']}-{ficha['clon']}"
-        
         return ficha
 
     def save_player(self, ficha):

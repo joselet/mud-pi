@@ -26,7 +26,16 @@ class RoomManager:
         room_row = cur.fetchone()
         if not room_row:
             conn.close()
-            raise ValueError(f"Room not found in DB: {room_name}")
+            print(f"[ERR] Room not found in DB: {room_name}. Returning empty room data.")
+            #raise ValueError(f"Room not found in DB: {room_name}")
+            return {
+                "name": "ERROR",
+                "title": "ERROR",
+                "description": "ERROR",
+                "exits": {},
+                "objects": {},  # Incluye los objetos con sus interacciones
+                "interactions": {}  # Agregar las interacciones a los datos de la sala
+            }
 
         # Buscar las salidas de la sala
         cur.execute("SELECT exit_name, target_room FROM exits WHERE room_name = ?", (room_name.lower(),))

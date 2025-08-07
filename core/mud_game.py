@@ -72,7 +72,14 @@ class MudGame:
                 self.players[id]["awaiting_password"] = True
                 self.players[id]["password_attempts"] = 0
                 if self.player_manager.load_player(player_name):
-                    self.mud.send_message(id, "Personaje encontrado. Dame la contraseña:")
+                    ficha = self.player_manager.load_player(player_name)
+                    if ficha.get("clon", 1) > 6:
+                        self.mud.send_message(id, "Acceso denegado. Has alcanzado el límite de clones.")
+                        print(f"[WRN] Jugador {ficha['name']} Intento de acceso con más de 6 clones, enviando mensaje de indisponibilidad de línea genética.")
+                        self.mud.send_message(id, f"\033[35mINFORMACIÓN con CS UV:\nAtención, Ciudadano. \nTras la terminación de su última réplica clónica, su patrón genético ha sido clasificado como inservible para el progreso del Complejo Alfa. \nEl Ordenador ha procedido a su archivo permanente por su naturaleza recurrentemente defectuosa y para la optimización de recursos. \nEl Ordenador es su amigo.\033[0m\nIntente acceder a la línea genética de un jugador con más de 6 clones no está permitido. Acceda con un clon distinto")
+                        self.players[id]["awaiting_name"] = True
+                    else:
+                        self.mud.send_message(id, "Personaje encontrado. Dame la contraseña:")
                 else:
                     self.mud.send_message(id, "Personaje no encontrado. Vamos a crearlo. Por favor, establece una contraseña:")
                     self.players[id]["crear_jugador"] = True
@@ -122,7 +129,14 @@ class MudGame:
                 if command in COMMAND_ALIASES:
                     command = COMMAND_ALIASES[command]
 
-                if command == "ayuda":
+                if command == "debug_data": # Comando para depurar datos del jugador
+                    ficha = self.players[id]
+                    self.mud.send_message(id, f"Datos del jugador (id= {id}):\n{json.dumps(ficha, indent=2)}")
+                    # mostrar la estructura de la room
+                    room = self.room_manager.load_room(ficha["room"])
+                    self.mud.send_message(id, f"Datos de la sala (id= {ficha['room']}):\n{json.dumps(room, indent=2)}")
+
+                elif command == "ayuda":
                     self.mud.send_message(id, "Comandos básicos:")
                     self.mud.send_message(id, "  mirar <objeto>   - Examina tu alrededor. Si especificas un objeto o personaje, lo examina en detalle.")
                     self.mud.send_message(id, "  ir <exit>        - Mover hacia la salida especificada")
