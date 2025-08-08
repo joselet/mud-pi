@@ -17,7 +17,7 @@ Fuente: [wikipedia](https://es.wikipedia.org/wiki/Paranoia_(juego_de_rol))
 Requerimientos:
 ---------------
 - Para arrancar el servidor: _Python_ (2.7+ or 3.3+) <http://www.python.org/download/>
-- Del lado del cliente necesitarás telnet \<ip del servidor> 1234
+- Del lado del cliente, leer las instrucciones de cómo conectar (más abajo)
 
 [esta guia](http://technet.microsoft.com/en-us/library/cc771275%28v=ws.10%29.aspx)
 puede ayudarte.
@@ -52,8 +52,8 @@ _screen_ funcionando background. La proxima vez que conectes, te puedes engancha
 [crear un daemon script](http://jimmyg.org/blog/2010/python-daemon-init-script.html)
 para ejecutar el script cada vez que se inicie el servidor
 
-Conectar al Server para jugar
------------------------------
+Cómo conectar al Server para jugar
+----------------------------------
 Para jugar, incluyo un pequeño cliente telnet de prueba. Te permitirá testear el juego.
 Simplemente teclea `python cliente.py` en una nueva terminal. Acepta los parámetros de servidor y puerto por defecto o adaptalos a tu configuración y conectarás con el servidor para poder jugar.
 
