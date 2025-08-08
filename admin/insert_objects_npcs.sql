@@ -8,7 +8,7 @@ CREATE TABLE room_objects (
 
 -- Ejemplo de inserción de objetos
 INSERT INTO room_objects (room_name, object_name, description) VALUES
-('inicio', 'probeta,probetas', 'Diferentes probetas de cristal llenas de diferentes colores semi-transparentes, azul, verde, amarillo... Parece que contienen algún tipo de sustancia química. Te preguntas que ocurriría si pruebas a "beber probeta azul" o quizás "beber probeta verde"...'),
+('inicio', 'probeta,probetas', 'Diferentes probetas de cristal llenas de diferentes colores semi-transparentes, azul, verde, amarillo... Parece que contienen algún tipo de sustancia química. Te preguntas que ocurriría si pruebas a "beber probeta azul" o quizás "beber probeta verde", o "beber probeta amarilla"...'),
 ('inicio', 'tubo,tubos', 'Un montón de tubos de ensallo y probetas de diferentes colores y tamaños. Sientes cierta tentación de estudiar también las diferentes probetas.'),
 ('inicio', 'terminal,terminales', 'El científico te bloquea el acceso diciendo: "No puedes acceder a esta información."'),
 ('lab/farmacia', 'terminal,terminales', 'Una terminal de ordenador con una pantalla que muestra un mensaje de bienvenida. Parece que puedes "teclear terminal" para ver los comandos disponibles.'),
@@ -39,7 +39,7 @@ CREATE TABLE object_interactions (
 
 -- Ejemplo de inserción de interacciones
 INSERT INTO object_interactions (room_name, object_name, command, effect, message, cooldown, cooldown_message) VALUES
-('inicio', 'probeta azul', 'beber', 'pv-=10', 'Engulles el contenido de la probeta y sientes un terrible ardor en el esófago', 30, 'Se te quitan las ganas de probar a beber una de esas cosas experimentales'),
+('inicio', 'probeta azul', 'beber', 'pv-=15', 'Engulles el contenido de la probeta y sientes un terrible ardor en el esófago', 30, 'Se te quitan las ganas de probar a beber una de esas cosas experimentales'),
 ('inicio', 'probeta verde', 'beber', NULL, 'Engulles el contenido de la probeta. El amargor extremo te produce nauseas', 30, 'Se te quitan las ganas de probar ese liquido tan asqueroso nuevamenta'),
 ('inicio', 'probeta amarilla', 'beber', 'pv+=10', 'Engulles el contenido de la probeta sintiendo un generoso restablecimiento', 30, 'No te convence abusar de las probetas amarillas, pero te sientes mejor. (vuelve a beber en % segundos)'),
 ('lab/farmacia', 'terminal', 'teclear', NULL, 'La terminal muestra un prompt solicitando una contraseña', 0, NULL),

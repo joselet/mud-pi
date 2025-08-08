@@ -23,12 +23,14 @@ class MudClient:
             try:
                 data = self.socket.recv(1024).decode("utf-8")
                 if not data:
-                    print("Conexión cerrada por el servidor.")
+                    print("\nConexión cerrada por el servidor.")
                     self.running = False
                     break
-                # Imprimir el mensaje recibido sin agregar un salto de línea adicional
-                print(f"\r{data}", end="")  # Usar '\r' para sobrescribir la línea actual
-                print("> ", end="", flush=True)  # Restaurar el prompt de entrada
+                # mostrar el mensaje recibido
+                print(f"{data}", end="", flush=True)  # Restaurar el prompt solo si hay datos nuevos
+            except socket.timeout:
+                # Ignorar timeouts para evitar interrupciones
+                continue
             except Exception as e:
                 print(f"\nError al recibir datos: {e}")
                 self.running = False
@@ -37,7 +39,7 @@ class MudClient:
     def send_messages(self):
         try:
             while self.running:
-                message = input("> ")  # Mostrar un prompt para la entrada del usuario
+                message = input()  # Mostrar un prompt para la entrada del usuario
                 if message.lower() in ["salir", "exit", "quit"]:
                     print("Desconectando del servidor...")
                     self.running = False
@@ -70,4 +72,5 @@ if __name__ == "__main__":
         sys.exit(1)
 
     client = MudClient(host, port)
+    client.run()
     client.run()
