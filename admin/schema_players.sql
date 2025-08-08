@@ -1,4 +1,4 @@
-drop table if exists players;
+-- drop table if exists players;
 CREATE TABLE IF NOT EXISTS players (
     name TEXT PRIMARY KEY,
     password TEXT NOT NULL,

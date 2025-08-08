@@ -54,6 +54,10 @@ para ejecutar el script cada vez que se inicie el servidor
 
 Conectar al Server para jugar
 -----------------------------
+Para jugar, incluyo un pequeño cliente telnet de prueba. Te permitirá testear el juego.
+Simplemente teclea `python cliente.py` en una nueva terminal. Acepta los parámetros de servidor y puerto por defecto o adaptalos a tu configuración y conectarás con el servidor para poder jugar.
+
+Si quieres utilizar tu propio cliente de telnet:
 
 	telnet <ip address> 1234
 	

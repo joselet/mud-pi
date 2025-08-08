@@ -38,8 +38,8 @@ class RoomManager:
             }
 
         # Buscar las salidas de la sala
-        cur.execute("SELECT exit_name, target_room FROM exits WHERE room_name = ?", (room_name.lower(),))
-        exits = {row["exit_name"]: row["target_room"] for row in cur.fetchall()}
+        cur.execute("SELECT exit_name, target_room, hidden FROM exits WHERE room_name = ?", (room_name.lower(),))
+        exits = {row["exit_name"]: {"target_room": row["target_room"], "hidden": bool(row["hidden"])} for row in cur.fetchall()}
 
         # Buscar los objetos de la sala
         cur.execute("SELECT object_name, description FROM room_objects WHERE room_name = ?", (room_name.lower(),))
@@ -94,8 +94,9 @@ class RoomManager:
                 mud.send_message(id, room["description"].replace("\\n", "\n"))
                 print(f"[LOG] (pid= {id}): {room['name']}: {room['title']}")  # Debug output
             else:  # Simplified mode
-                # Convert full exit names to aliases using REVERSED_COMMAND_ALIASES
-                exit_aliases = [REVERSED_COMMAND_ALIASES.get(exit_name, exit_name) for exit_name in room["exits"].keys()]
+                # Mostrar solo las salidas no ocultas
+                visible_exits = [exit_name for exit_name, exit_data in room["exits"].items() if not exit_data["hidden"]]
+                exit_aliases = [REVERSED_COMMAND_ALIASES.get(exit_name, exit_name) for exit_name in visible_exits]
                 mud.send_message(id, f"{room['title']} [{','.join(exit_aliases)}]")
             
             # Mostrar jugadores en la sala
@@ -132,11 +133,14 @@ class RoomManager:
                         mud.send_message(pid, f"{players[id]['display_name']} se fue hacia '{ex}'")
                 
                 # Move the player
-                players[id]["room"] = room["exits"][ex]
+                players[id]["room"] = room["exits"][ex]["target_room"]  # Asegurarse de usar solo el target_room
                 new_room = players[id]["room"]  # Store the new room after moving
                 
                 # Determine the reverse exit leading back to the current room
-                reverse_exit = next((exit_name for exit_name, target_room in self.load_room(new_room)["exits"].items() if target_room == current_room), "algún lugar desconocido")
+                reverse_exit = next(
+                    (exit_name for exit_name, exit_data in self.load_room(new_room)["exits"].items() if exit_data["target_room"] == current_room),
+                    "algún lugar desconocido"
+                )
                 
                 # Notify players in the new room about the player's arrival
                 for pid, pl in players.items():
