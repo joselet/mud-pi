@@ -1,16 +1,17 @@
 import sqlite3
-from .config import REVERSED_COMMAND_ALIASES, adaptaTexto  # Import the reversed aliases and adaptaTexto
+from .config import REVERSED_COMMAND_ALIASES  # Import the reversed aliases
 
 class RoomManager:
-    def __init__(self, db_path):
+    def __init__(self, game, db_path):
+        self.game = game
         self.db_path = db_path
         self.rooms_cache = {}
 
-    def players_in_room(self, room_name, players):
+    def players_in_room(self, room_name):
         """
         Devuelve una lista de IDs de jugadores presentes en una sala específica.
         """
-        return [pid for pid, pl in players.items() if pl["room"] == room_name]
+        return [pid for pid, pl in self.game.players.items() if pl["room"] == room_name]
 
     def load_room(self, room_name):
         # Si la sala ya está en la caché, devolverla
@@ -26,20 +27,11 @@ class RoomManager:
         room_row = cur.fetchone()
         if not room_row:
             conn.close()
-            print(f"[ERR] Room not found in DB: {room_name}. Returning empty room data.")
-            #raise ValueError(f"Room not found in DB: {room_name}")
-            return {
-                "name": "ERROR",
-                "title": "ERROR",
-                "description": "ERROR",
-                "exits": {},
-                "objects": {},  # Incluye los objetos con sus interacciones
-                "interactions": {}  # Agregar las interacciones a los datos de la sala
-            }
+            raise ValueError(f"Room not found in DB: {room_name}")
 
         # Buscar las salidas de la sala
-        cur.execute("SELECT exit_name, target_room, hidden FROM exits WHERE room_name = ?", (room_name.lower(),))
-        exits = {row["exit_name"]: {"target_room": row["target_room"], "hidden": bool(row["hidden"])} for row in cur.fetchall()}
+        cur.execute("SELECT exit_name, target_room FROM exits WHERE room_name = ?", (room_name.lower(),))
+        exits = {row["exit_name"]: row["target_room"] for row in cur.fetchall()}
 
         # Buscar los objetos de la sala
         cur.execute("SELECT object_name, description FROM room_objects WHERE room_name = ?", (room_name.lower(),))
@@ -86,77 +78,72 @@ class RoomManager:
         self.rooms_cache[room_name] = room_data
         return room_data
 
-    def show_room_to_player(self, id, players, mud):
+    def show_room_to_player(self, id):
         try:
-            room = self.load_room(players[id]["room"])
-            if players[id]["config"].get("detallado", True):  # Default to detailed view if not set
-                mud.send_message(id, room["title"])
-                mud.send_message(id, room["description"].replace("\\n", "\n"))
+            room = self.load_room(self.game.players[id]["room"])
+            if self.game.players[id]["config"].get("detallado", True):  # Default to detailed view if not set
+                self.game.mud.send_message(id, room["title"])
+                self.game.mud.send_message(id, room["description"].replace("\\n", "\n"))
                 print(f"[LOG] (pid= {id}): {room['name']}: {room['title']}")  # Debug output
             else:  # Simplified mode
-                # Mostrar solo las salidas no ocultas
-                visible_exits = [exit_name for exit_name, exit_data in room["exits"].items() if not exit_data["hidden"]]
-                exit_aliases = [REVERSED_COMMAND_ALIASES.get(exit_name, exit_name) for exit_name in visible_exits]
-                mud.send_message(id, f"{room['title']} [{','.join(exit_aliases)}]")
+                # Convert full exit names to aliases using REVERSED_COMMAND_ALIASES
+                exit_aliases = [REVERSED_COMMAND_ALIASES.get(exit_name, exit_name) for exit_name in room["exits"].keys()]
+                self.game.mud.send_message(id, f"{room['title']} [{','.join(exit_aliases)}]")
             
             # Mostrar jugadores en la sala
-            players_here = [pl["display_name"] for pid, pl in players.items() if players[pid]["room"] == players[id]["room"] and pid != id]
+            players_here = [pl["display_name"] for pid, pl in self.game.players.items() if self.game.players[pid]["room"] == self.game.players[id]["room"] and pid != id]
             if players_here:
-                mud.send_message(id, f"Aquí ves a: {', '.join(players_here)}")
+                self.game.mud.send_message(id, f"Aquí ves a: {', '.join(players_here)}")
             else:
-                mud.send_message(id, "Estás solo aquí.")
+                self.game.mud.send_message(id, "Estás solo aquí.")
     
             # Mostrar NPCs en la sala
-            npcs = self.load_npcs_in_room(players[id]["room"])
+            npcs = self.load_npcs_in_room(self.game.players[id]["room"])
             if npcs:
                 npc_names = [npc["display_name"] for npc in npcs]
-                mud.send_message(id, f"Aquí ves a los siguientes NPCs: {', '.join(npc_names)}")
+                self.game.mud.send_message(id, f"Aquí ves a los siguientes NPCs: {', '.join(npc_names)}")
 
             # Show exits (detailed view)
-            if players[id]["config"].get("detallado", True):
-                mud.send_message(id, f"Salidas: {', '.join(room['exits'])}")
+            if self.game.players[id]["config"].get("detallado", True):
+                self.game.mud.send_message(id, f"Salidas: {', '.join(room['exits'])}")
         except ValueError as e:
             print(f"[ERR] Error loading room (pid= {id}): {e}")  # Debug output
-            mud.send_message(id, "\033[31mHas sufrido un fallo espacio/tiempo y apareces en la incubadora.\033[0m")
-            players[id]["room"] = "respawn"
-            self.show_room_to_player(id, players, mud)
+            self.game.mud.send_message(id, "\033[31mHas sufrido un fallo espacio/tiempo y apareces en la incubadora.\033[0m")
+            self.game.players[id]["room"] = "respawn"
+            self.show_room_to_player(id)
 
-    def move_player(self, id, exit_name, players, mud):
+    def move_player(self, id, exit_name):
         try:
-            room = self.load_room(players[id]["room"])
+            room = self.load_room(self.game.players[id]["room"])
             ex = exit_name.lower()
             if ex in room["exits"]:
-                current_room = players[id]["room"]  # Store the current room before moving
+                current_room = self.game.players[id]["room"]  # Store the current room before moving
                 # Notify players in the current room about the player's exit
-                for pid, pl in players.items():
-                    if players[pid]["room"] == current_room and pid != id:
-                        mud.send_message(pid, f"{players[id]['display_name']} se fue hacia '{ex}'")
+                for pid, pl in self.game.players.items():
+                    if self.game.players[pid]["room"] == current_room and pid != id:
+                        self.game.mud.send_message(pid, f"{self.game.players[id]['display_name']} se fue hacia '{ex}'")
                 
                 # Move the player
-                players[id]["room"] = room["exits"][ex]["target_room"]  # Asegurarse de usar solo el target_room
-                new_room = players[id]["room"]  # Store the new room after moving
+                self.game.players[id]["room"] = room["exits"][ex]
+                new_room = self.game.players[id]["room"]  # Store the new room after moving
                 
                 # Determine the reverse exit leading back to the current room
-                reverse_exit = next(
-                    (exit_name for exit_name, exit_data in self.load_room(new_room)["exits"].items() if exit_data["target_room"] == current_room),
-                    "algún lugar desconocido"
-                )
+                reverse_exit = next((exit_name for exit_name, target_room in self.load_room(new_room)["exits"].items() if target_room == current_room), "algún lugar desconocido")
                 
                 # Notify players in the new room about the player's arrival
-                for pid, pl in players.items():
-                    if players[pid]["room"] == new_room and pid != id:
-                        mud.send_message(pid, f"{players[id]['display_name']} llega desde '{reverse_exit}'")
+                for pid, pl in self.game.players.items():
+                    if self.game.players[pid]["room"] == new_room and pid != id:
+                        self.game.mud.send_message(pid, f"{self.game.players[id]['display_name']} llega desde '{reverse_exit}'")
                 
                 # Show the new room to the player
-                self.show_room_to_player(id, players, mud)
-                print(f"[LOG] (pid= {id}): {players[id]['display_name']} fué desde {current_room} a {new_room} a través de la salida '{ex}'")  # Debug output
+                self.show_room_to_player(id)
             else:
-                mud.send_message(id, f"Salida desconocida '{ex}'")
+                self.game.mud.send_message(id, f"Salida desconocida '{ex}'")
         except ValueError as e:
             print(f"[ERR] Error loading room (pid= {id}): {e}")  # Debug output
-            mud.send_message(id, "\033[31mHas sufrido un fallo espacio/tiempo y apareces en la incubadora.\033[0m")
-            players[id]["room"] = "respawn"
-            self.show_room_to_player(id, players, mud)
+            self.game.mud.send_message(id, "\033[31mHas sufrido un fallo espacio/tiempo y apareces en la incubadora.\033[0m")
+            self.game.players[id]["room"] = "respawn"
+            self.show_room_to_player(id)
 
 
     def load_npcs_in_room(self, room_name):
@@ -168,7 +155,7 @@ class RoomManager:
         # asignar un id a cada NPC
         for i, npc in enumerate(npcs):
             npc["id"] = f"_npc{npc['id']}"
-            npc["description"] = adaptaTexto(npc["description"])
+            npc["description"] = npc["description"].replace("\\033[", "\033[")  # Normalizar la descripción por si hubieran colores
         conn.close()
         return npcs
 

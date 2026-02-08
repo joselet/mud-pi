@@ -1,10 +1,8 @@
 import re
 
 class EffectManager:
-    def __init__(self, players, mud, player_manager):
-        self.players = players
-        self.mud = mud
-        self.player_manager = player_manager  # Nuevo parámetro para manejar jugadores
+    def __init__(self, game):
+        self.game = game
 
 
     # función para aplicar efectos (una propuesta mas segura que hacer eval(effect))
@@ -15,18 +13,18 @@ class EffectManager:
         :param effect: Expresión que modifica los atributos del jugador (e.g., "pv += 10").
         :param message: Mensaje opcional que se envía al jugador.
         """
-        if player_id not in self.players:
-            self.mud.send_message(player_id, "[error] Jugador no encontrado.")
+        if player_id not in self.game.players:
+            self.game.mud.send_message(player_id, "[error] Jugador no encontrado.")
             return
 
         # Crear un contexto seguro con las variables del jugador
         context = {
-            "pv": self.players[player_id].get("pv", 0),
-            "e": self.players[player_id].get("e", 0),
+            "pv": self.game.players[player_id].get("pv", 0),
+            "e": self.game.players[player_id].get("e", 0),
         }
 
         # Agregar dinámicamente todas las claves del jugador al contexto
-        for key, value in self.players[player_id].items():
+        for key, value in self.game.players[player_id].items():
             if key not in context:
                 context[key] = value
 
@@ -36,25 +34,25 @@ class EffectManager:
 
             # Actualizar los valores del jugador
             for key in context:
-                if key in self.players[player_id]:
-                    self.players[player_id][key] = context[key]
+                if key in self.game.players[player_id]:
+                    self.game.players[player_id][key] = context[key]
                 else:
                     # Si es una nueva clave, inicializarla
-                    self.players[player_id][key] = context[key]
+                    self.game.players[player_id][key] = context[key]
             
             # grabar ficha en la base de datos
-            self.player_manager.save_player(self.players[player_id])  # Cambiado a self.player_manager
+            self.game.player_manager.save_player(self.game.players[player_id])  # Cambiado a self.player_manager
 
             # Enviar mensajes al jugador (DEBUG)
-            self.mud.send_message(player_id, f"[info] Se aplicó {effect}.")
+            self.game.mud.send_message(player_id, f"[info] Se aplicó {effect}.")
             # for key in context:
             #     self.mud.send_message(player_id, f"[info] {key}: {context[key]}")
 
             if message:
-                self.mud.send_message(player_id, message)
+                self.game.mud.send_message(player_id, message)
 
         except Exception as e:
-            self.mud.send_message(player_id, f"[error] Error al aplicar el efecto: {e}")
+            self.game.mud.send_message(player_id, f"[error] Error al aplicar el efecto: {e}")
 
     # def apply_effect(self, player_id, effect, message=None):
     #     """

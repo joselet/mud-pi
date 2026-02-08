@@ -14,9 +14,9 @@ class MudGame:
         self.mud = MudServer()
         self.players = {}
         self.player_manager = PlayerManager(db_path)
-        self.room_manager = RoomManager(db_path)
-        self.combat_system = CombatSystem(self.players, self.mud, self.room_manager, self.player_manager)  # Pass player_manager
-        self.room_command_processor = RoomCommandProcessor(self.room_manager, self.players, self.mud, self.player_manager)  # Pass player_manager
+        self.room_manager = RoomManager(self, db_path) # Pasamos 'self' (game)
+        self.combat_system = CombatSystem(self)        # Pasamos 'self' (game)
+        self.room_command_processor = RoomCommandProcessor(self) # Pasamos 'self' (game)
 
     def run(self):
         print(f"Paranoia MUD está arrancando. Bienvenido al terminal de información clasificada del Complejo Alfa.")
@@ -24,7 +24,6 @@ class MudGame:
         print(f"A continuación en esta terminal se mostrará todo aquello que suceda bajo el dominio del \033[97;;1m ordenador\033[0m.")
         print(f"Recuerda que todo lo que hagas será registrado y monitorizado por el \033[97;;1m ordenador\033[0m.")
         print(f"El ordenador es tu amigo, pero no te fíes de él. No te fíes de nadie.\n")
-
         while True:
             time.sleep(0.2)
             self.mud.update()
@@ -72,14 +71,7 @@ class MudGame:
                 self.players[id]["awaiting_password"] = True
                 self.players[id]["password_attempts"] = 0
                 if self.player_manager.load_player(player_name):
-                    ficha = self.player_manager.load_player(player_name)
-                    if ficha.get("clon", 1) > 6:
-                        self.mud.send_message(id, "Acceso denegado. Has alcanzado el límite de clones.")
-                        print(f"[WRN] Jugador {ficha['name']} Intento de acceso con más de 6 clones, enviando mensaje de indisponibilidad de línea genética.")
-                        self.mud.send_message(id, f"\033[35mINFORMACIÓN con CS UV:\nAtención, Ciudadano. \nTras la terminación de su última réplica clónica, su patrón genético ha sido clasificado como inservible para el progreso del Complejo Alfa. \nEl Ordenador ha procedido a su archivo permanente por su naturaleza recurrentemente defectuosa y para la optimización de recursos. \nEl Ordenador es su amigo.\033[0m\nIntente acceder a la línea genética de un jugador con más de 6 clones no está permitido. Acceda con un clon distinto")
-                        self.players[id]["awaiting_name"] = True
-                    else:
-                        self.mud.send_message(id, "Personaje encontrado. Dame la contraseña:")
+                    self.mud.send_message(id, "Personaje encontrado. Dame la contraseña:")
                 else:
                     self.mud.send_message(id, "Personaje no encontrado. Vamos a crearlo. Por favor, establece una contraseña:")
                     self.players[id]["crear_jugador"] = True
@@ -106,8 +98,7 @@ class MudGame:
                     self.players[id]["awaiting_password"] = False
                     self.mud.send_message(id, f"Bienvenido al juego, {self.players[id]['display_name']}. Escribe 'ayuda' para obtener una lista de comandos.")
                     print(f"[LOG] (pid: {id}) {self.players[id]['name']} entró al juego.")
-                    print(f"[LOG] (pid= {id}): Detectada inserción física de {self.players[id]['display_name']} en: {self.players[id]['room']}.")
-                    self.room_manager.show_room_to_player(id, self.players, self.mud)
+                    self.room_manager.show_room_to_player(id)
                     # notificar a otros jugadores
                     for pid, pl in self.players.items():
                         if pid != id:
@@ -129,22 +120,14 @@ class MudGame:
                 if command in COMMAND_ALIASES:
                     command = COMMAND_ALIASES[command]
 
-                if command == "debug_data": # Comando para depurar datos del jugador
-                    ficha = self.players[id]
-                    self.mud.send_message(id, f"Datos del jugador (id= {id}):\n{json.dumps(ficha, indent=2)}")
-                    # mostrar la estructura de la room
-                    room = self.room_manager.load_room(ficha["room"])
-                    self.mud.send_message(id, f"Datos de la sala (id= {ficha['room']}):\n{json.dumps(room, indent=2)}")
-
-                elif command == "ayuda":
+                if command == "ayuda":
                     self.mud.send_message(id, "Comandos básicos:")
                     self.mud.send_message(id, "  mirar <objeto>   - Examina tu alrededor. Si especificas un objeto o personaje, lo examina en detalle.")
                     self.mud.send_message(id, "  ir <exit>        - Mover hacia la salida especificada")
-                    self.mud.send_message(id, "  <exit>           - Mover hacia la salida especificada")
                     self.mud.send_message(id, "  ficha            - Comprobar la ficha y estado de tu personaje")
                     self.mud.send_message(id, "  decir <message>  - Decir algo en voz alta")
                     self.mud.send_message(id, "  hablar <npc>     - iniciar una conversación con un NPC")
-                    self.mud.send_message(id, "  hablar <nombre_npc> <tema> - Hablar con un NPC sobre un tema específico")
+                    self.mud.send_message(id, "                   - hablar <nombre_npc> <tema> - Hablar con un NPC sobre un tema específico")
                     self.mud.send_message(id, "  matar <objetivo> - Atacar a otro personaje")
                     self.mud.send_message(id, "  config           - configura algun aspecto del juego y tu personaje (en desarrollo)")
                     self.mud.send_message(id, "  abandonar        - Abandonar el juego")
@@ -165,34 +148,23 @@ class MudGame:
                     )
 
                     if npc and npc["can_talk"]:
-                        try:
-                            conversation = json.loads(npc["conversation"])
-                            if not topic:  # Si no se especifica un tema, mostrar el saludo inicial
-                                self.mud.send_message(id, f"{npc['display_name']} dice: {conversation.get('greeting', 'Hola.')}")
-                                unlocked_topics = self.players[id].setdefault("unlocked_topics", {}).setdefault(npc_name, [])
-                                # Desbloquear temas desde el saludo inicial si existe un campo "unlock"
-                                greeting_unlock = conversation.get("unlock", [])
-                                unlocked_topics.extend(greeting_unlock)
-                                self.players[id]["unlocked_topics"][npc_name] = list(set(unlocked_topics))
-                            else:
-                                unlocked_topics = self.players[id].setdefault("unlocked_topics", {}).setdefault(npc_name, [])
-                                if topic in unlocked_topics:  # Verificar si el tema ya está desbloqueado
-                                    topic_data = conversation["topics"].get(topic)
-                                    if topic_data:
-                                        self.mud.send_message(id, f"{npc['display_name']} dice: {topic_data['response']}")
-                                        # Desbloquear nuevos temas
-                                        new_topics = topic_data.get("unlock", [])
-                                        unlocked_topics.extend(new_topics)
-                                        self.players[id]["unlocked_topics"][npc_name] = list(set(unlocked_topics))
-                                    else:
-                                        self.mud.send_message(id, f"{npc['display_name']} no tiene nada que decir sobre '{topic}'.")
-                                elif topic in conversation.get("topics", {}):  # Si el tema existe pero no está desbloqueado
-                                    self.mud.send_message(id, f"No hay nada que decir de '{topic}' todavía.")
-                                else:  # Si el tema no existe en la conversación
+                        conversation = json.loads(npc["conversation"])
+                        if not topic:  # Si no se especifica un tema, mostrar el saludo inicial
+                            self.mud.send_message(id, f"{npc['display_name']} dice: {conversation.get('greeting', 'Hola.')}")
+                            self.players[id].setdefault("unlocked_topics", {}).setdefault(npc_name, [])
+                        else:
+                            unlocked_topics = self.players[id].get("unlocked_topics", {}).get(npc_name, [])
+                            if topic in unlocked_topics or topic in conversation["topics"]:
+                                topic_data = conversation["topics"].get(topic)
+                                if topic_data:
+                                    self.mud.send_message(id, f"{npc['display_name']} dice: {topic_data['response']}")
+                                    # Desbloquear nuevos temas
+                                    unlocked_topics.extend(topic_data.get("unlock", []))
+                                    self.players[id]["unlocked_topics"][npc_name] = list(set(unlocked_topics))
+                                else:
                                     self.mud.send_message(id, f"{npc['display_name']} no tiene nada que decir sobre '{topic}'.")
-                        except (json.JSONDecodeError, KeyError, TypeError) as e:
-                            print(f"[WRN] Error al procesar la conversación: {e} para el NPC {npc['display_name']}.")
-                            self.mud.send_message(id, f"{npc['display_name']} no tiene ganas de hablar de '{topic}' ni de nada más.")
+                            else:
+                                self.mud.send_message(id, f"No puedes hablar sobre '{topic}' todavía.")
                     else:
                         self.mud.send_message(id, f"No puedes hablar con '{npc_name}'.")
                 
@@ -241,11 +213,11 @@ class MudGame:
                         config_detallado_actual = self.players[id]["config"].get("detallado", True)
                         # forzar la visualización detallada
                         self.players[id]["config"]["detallado"] = True
-                        self.room_manager.show_room_to_player(id, self.players, self.mud)
+                        self.room_manager.show_room_to_player(id)
                         # restaurar la configuración detallada del jugador
                         self.players[id]["config"]["detallado"] = config_detallado_actual
                 elif command == "ir":
-                    self.room_manager.move_player(id, params, self.players, self.mud)
+                    self.room_manager.move_player(id, params)
                 elif command == "abandonar":
                     self.mud.send_message(id, "Desconectando. Adiós!")
                     ficha = self.players[id]
@@ -349,4 +321,4 @@ class MudGame:
                         self.mud.send_message(id, "\033[31mHas sufrido un fallo espacio/tiempo y apareces en la incubadora.\033[0m")
                         print(f"[ERR] Fallo para (pid= {id}). Comando: {command} (Error: {e})")
                         self.players[id]["room"] = "respawn"
-                        self.room_manager.show_room_to_player(id, self.players, self.mud)
+                        self.room_manager.show_room_to_player(id)
